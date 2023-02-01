@@ -49,26 +49,26 @@ void main() {
 
   /// Returns a modified version of a list of [relativePaths] that are relative
   /// to [package] to instead be relative to [packagesDir].
-  List<String> getPackagesDirRelativePaths(
-      RepositoryPackage package, List<String> relativePaths) {
+  List<String> _getPackagesDirRelativePaths(
+      Directory packageDir, List<String> relativePaths) {
     final p.Context path = analyzeCommand.path;
     final String relativeBase =
-        path.relative(package.path, from: packagesDir.path);
+        path.relative(packageDir.path, from: packagesDir.path);
     return relativePaths
         .map((String relativePath) => path.join(relativeBase, relativePath))
         .toList();
   }
 
   /// Returns a list of [count] relative paths to pass to [createFakePlugin]
-  /// or [createFakePackage] with name [packageName] such that each path will
-  /// be 99 characters long relative to [packagesDir].
+  /// with name [pluginName] such that each path will be 99 characters long
+  /// relative to [packagesDir].
   ///
   /// This is for each of testing batching, since it means each file will
   /// consume 100 characters of the batch length.
-  List<String> get99CharacterPathExtraFiles(String packageName, int count) {
+  List<String> _get99CharacterPathExtraFiles(String pluginName, int count) {
     final int padding = 99 -
-        packageName.length -
-        1 - // the path separator after the package name
+        pluginName.length -
+        1 - // the path separator after the plugin name
         1 - // the path separator after the padding
         10; // the file name
     const int filenameBase = 10000;
@@ -86,7 +86,7 @@ void main() {
       'lib/src/b.dart',
       'lib/src/c.dart',
     ];
-    final RepositoryPackage plugin = createFakePlugin(
+    final Directory pluginDir = createFakePlugin(
       'a_plugin',
       packagesDir,
       extraFiles: files,
@@ -98,8 +98,11 @@ void main() {
         processRunner.recordedCalls,
         orderedEquals(<ProcessCall>[
           ProcessCall(
-              'dart',
-              <String>['format', ...getPackagesDirRelativePaths(plugin, files)],
+              getFlutterCommand(mockPlatform),
+              <String>[
+                'format',
+                ..._getPackagesDirRelativePaths(pluginDir, files)
+              ],
               packagesDir.path),
         ]));
   });
@@ -111,7 +114,7 @@ void main() {
       'lib/src/c.dart',
     ];
     const String unformattedFile = 'lib/src/d.dart';
-    final RepositoryPackage plugin = createFakePlugin(
+    final Directory pluginDir = createFakePlugin(
       'a_plugin',
       packagesDir,
       extraFiles: <String>[
@@ -121,8 +124,7 @@ void main() {
     );
 
     final p.Context posixContext = p.posix;
-    childFileWithSubcomponents(
-            plugin.directory, posixContext.split(unformattedFile))
+    childFileWithSubcomponents(pluginDir, posixContext.split(unformattedFile))
         .writeAsStringSync(
             '// copyright bla bla\n// This file is hand-formatted.\ncode...');
 
@@ -132,16 +134,16 @@ void main() {
         processRunner.recordedCalls,
         orderedEquals(<ProcessCall>[
           ProcessCall(
-              'dart',
+              getFlutterCommand(mockPlatform),
               <String>[
                 'format',
-                ...getPackagesDirRelativePaths(plugin, formattedFiles)
+                ..._getPackagesDirRelativePaths(pluginDir, formattedFiles)
               ],
               packagesDir.path),
         ]));
   });
 
-  test('fails if dart format fails', () async {
+  test('fails if flutter format fails', () async {
     const List<String> files = <String>[
       'lib/a.dart',
       'lib/src/b.dart',
@@ -149,9 +151,8 @@ void main() {
     ];
     createFakePlugin('a_plugin', packagesDir, extraFiles: files);
 
-    processRunner.mockProcessesForExecutable['dart'] = <io.Process>[
-      MockProcess(exitCode: 1)
-    ];
+    processRunner.mockProcessesForExecutable[getFlutterCommand(mockPlatform)] =
+        <io.Process>[MockProcess(exitCode: 1)];
     Error? commandError;
     final List<String> output = await runCapturingPrint(
         runner, <String>['format'], errorHandler: (Error e) {
@@ -171,7 +172,7 @@ void main() {
       'android/src/main/java/io/flutter/plugins/a_plugin/a.java',
       'android/src/main/java/io/flutter/plugins/a_plugin/b.java',
     ];
-    final RepositoryPackage plugin = createFakePlugin(
+    final Directory pluginDir = createFakePlugin(
       'a_plugin',
       packagesDir,
       extraFiles: files,
@@ -189,7 +190,7 @@ void main() {
                 '-jar',
                 javaFormatPath,
                 '--replace',
-                ...getPackagesDirRelativePaths(plugin, files)
+                ..._getPackagesDirRelativePaths(pluginDir, files)
               ],
               packagesDir.path),
         ]));
@@ -216,7 +217,7 @@ void main() {
         output,
         containsAllInOrder(<Matcher>[
           contains(
-              'Unable to run "java". Make sure that it is in your path, or '
+              'Unable to run \'java\'. Make sure that it is in your path, or '
               'provide a full path with --java.'),
         ]));
   });
@@ -251,7 +252,7 @@ void main() {
       'android/src/main/java/io/flutter/plugins/a_plugin/a.java',
       'android/src/main/java/io/flutter/plugins/a_plugin/b.java',
     ];
-    final RepositoryPackage plugin = createFakePlugin(
+    final Directory pluginDir = createFakePlugin(
       'a_plugin',
       packagesDir,
       extraFiles: files,
@@ -269,7 +270,7 @@ void main() {
                 '-jar',
                 javaFormatPath,
                 '--replace',
-                ...getPackagesDirRelativePaths(plugin, files)
+                ..._getPackagesDirRelativePaths(pluginDir, files)
               ],
               packagesDir.path),
         ]));
@@ -284,7 +285,7 @@ void main() {
       'macos/Classes/Foo.mm',
       'windows/foo_plugin.cpp',
     ];
-    final RepositoryPackage plugin = createFakePlugin(
+    final Directory pluginDir = createFakePlugin(
       'a_plugin',
       packagesDir,
       extraFiles: files,
@@ -301,7 +302,7 @@ void main() {
               <String>[
                 '-i',
                 '--style=file',
-                ...getPackagesDirRelativePaths(plugin, files)
+                ..._getPackagesDirRelativePaths(pluginDir, files)
               ],
               packagesDir.path),
         ]));
@@ -328,46 +329,9 @@ void main() {
     expect(
         output,
         containsAllInOrder(<Matcher>[
-          contains('Unable to run "clang-format". Make sure that it is in your '
+          contains(
+              'Unable to run \'clang-format\'. Make sure that it is in your '
               'path, or provide a full path with --clang-format.'),
-        ]));
-  });
-
-  test('falls back to working clang-format in the path', () async {
-    const List<String> files = <String>[
-      'linux/foo_plugin.cc',
-      'macos/Classes/Foo.h',
-    ];
-    final RepositoryPackage plugin = createFakePlugin(
-      'a_plugin',
-      packagesDir,
-      extraFiles: files,
-    );
-
-    processRunner.mockProcessesForExecutable['clang-format'] = <io.Process>[
-      MockProcess(exitCode: 1)
-    ];
-    processRunner.mockProcessesForExecutable['which'] = <io.Process>[
-      MockProcess(
-          stdout: '/usr/local/bin/clang-format\n/path/to/working-clang-format')
-    ];
-    processRunner.mockProcessesForExecutable['/usr/local/bin/clang-format'] =
-        <io.Process>[MockProcess(exitCode: 1)];
-    await runCapturingPrint(runner, <String>['format']);
-
-    expect(
-        processRunner.recordedCalls,
-        containsAll(<ProcessCall>[
-          const ProcessCall(
-              '/path/to/working-clang-format', <String>['--version'], null),
-          ProcessCall(
-              '/path/to/working-clang-format',
-              <String>[
-                '-i',
-                '--style=file',
-                ...getPackagesDirRelativePaths(plugin, files)
-              ],
-              packagesDir.path),
         ]));
   });
 
@@ -375,7 +339,7 @@ void main() {
     const List<String> files = <String>[
       'windows/foo_plugin.cpp',
     ];
-    final RepositoryPackage plugin = createFakePlugin(
+    final Directory pluginDir = createFakePlugin(
       'a_plugin',
       packagesDir,
       extraFiles: files,
@@ -394,7 +358,7 @@ void main() {
               <String>[
                 '-i',
                 '--style=file',
-                ...getPackagesDirRelativePaths(plugin, files)
+                ..._getPackagesDirRelativePaths(pluginDir, files)
               ],
               packagesDir.path),
         ]));
@@ -439,7 +403,7 @@ void main() {
     const List<String> javaFiles = <String>[
       'android/src/main/java/io/flutter/plugins/a_plugin/a.java'
     ];
-    final RepositoryPackage plugin = createFakePlugin(
+    final Directory pluginDir = createFakePlugin(
       'a_plugin',
       packagesDir,
       extraFiles: <String>[
@@ -462,14 +426,14 @@ void main() {
               <String>[
                 '-i',
                 '--style=file',
-                ...getPackagesDirRelativePaths(plugin, clangFiles)
+                ..._getPackagesDirRelativePaths(pluginDir, clangFiles)
               ],
               packagesDir.path),
           ProcessCall(
-              'dart',
+              getFlutterCommand(mockPlatform),
               <String>[
                 'format',
-                ...getPackagesDirRelativePaths(plugin, dartFiles)
+                ..._getPackagesDirRelativePaths(pluginDir, dartFiles)
               ],
               packagesDir.path),
           ProcessCall(
@@ -478,13 +442,13 @@ void main() {
                 '-jar',
                 javaFormatPath,
                 '--replace',
-                ...getPackagesDirRelativePaths(plugin, javaFiles)
+                ..._getPackagesDirRelativePaths(pluginDir, javaFiles)
               ],
               packagesDir.path),
         ]));
   });
 
-  test('fails if files are changed with --fail-on-change', () async {
+  test('fails if files are changed with --file-on-change', () async {
     const List<String> files = <String>[
       'linux/foo_plugin.cc',
       'macos/Classes/Foo.h',
@@ -577,7 +541,7 @@ void main() {
 
     // Make the file list one file longer than would fit in the batch.
     final List<String> batch1 =
-        get99CharacterPathExtraFiles(pluginName, batchSize + 1);
+        _get99CharacterPathExtraFiles(pluginName, batchSize + 1);
     final String extraFile = batch1.removeLast();
 
     createFakePlugin(
@@ -595,7 +559,7 @@ void main() {
         processRunner.recordedCalls,
         contains(
           ProcessCall(
-              'dart',
+              getFlutterCommand(mockPlatform),
               <String>[
                 'format',
                 '$pluginName\\$extraFile',
@@ -614,7 +578,7 @@ void main() {
 
     // Make the file list one file longer than would fit in a Windows batch.
     final List<String> batch =
-        get99CharacterPathExtraFiles(pluginName, batchSize + 1);
+        _get99CharacterPathExtraFiles(pluginName, batchSize + 1);
 
     createFakePlugin(
       pluginName,
@@ -634,7 +598,7 @@ void main() {
 
     // Make the file list one file longer than would fit in the batch.
     final List<String> batch1 =
-        get99CharacterPathExtraFiles(pluginName, batchSize + 1);
+        _get99CharacterPathExtraFiles(pluginName, batchSize + 1);
     final String extraFile = batch1.removeLast();
 
     createFakePlugin(
@@ -652,7 +616,7 @@ void main() {
         processRunner.recordedCalls,
         contains(
           ProcessCall(
-              'dart',
+              getFlutterCommand(mockPlatform),
               <String>[
                 'format',
                 '$pluginName/$extraFile',

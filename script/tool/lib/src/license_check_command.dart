@@ -3,12 +3,10 @@
 // found in the LICENSE file.
 
 import 'package:file/file.dart';
-import 'package:git/git.dart';
 import 'package:path/path.dart' as p;
-import 'package:platform/platform.dart';
 
 import 'common/core.dart';
-import 'common/package_command.dart';
+import 'common/plugin_command.dart';
 
 const Set<String> _codeFileExtensions = <String>{
   '.c',
@@ -105,11 +103,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ''';
 
 /// Validates that code files have copyright and license blocks.
-class LicenseCheckCommand extends PackageCommand {
+class LicenseCheckCommand extends PluginCommand {
   /// Creates a new license check command for [packagesDir].
-  LicenseCheckCommand(Directory packagesDir,
-      {Platform platform = const LocalPlatform(), GitDir? gitDir})
-      : super(packagesDir, platform: platform, gitDir: gitDir);
+  LicenseCheckCommand(Directory packagesDir) : super(packagesDir);
 
   @override
   final String name = 'license-check';
@@ -120,14 +116,7 @@ class LicenseCheckCommand extends PackageCommand {
 
   @override
   Future<void> run() async {
-    // Create a set of absolute paths to submodule directories, with trailing
-    // separator, to do prefix matching with to test directory inclusion.
-    final Iterable<String> submodulePaths = (await _getSubmoduleDirectories())
-        .map(
-            (Directory dir) => '${dir.absolute.path}${platform.pathSeparator}');
-
-    final Iterable<File> allFiles = (await _getAllFiles()).where(
-        (File file) => !submodulePaths.any(file.absolute.path.startsWith));
+    final Iterable<File> allFiles = await _getAllFiles();
 
     final Iterable<File> codeFiles = allFiles.where((File file) =>
         _codeFileExtensions.contains(p.extension(file.path)) &&
@@ -241,7 +230,8 @@ class LicenseCheckCommand extends PackageCommand {
     }
 
     // Sort by path for more usable output.
-    int pathCompare(File a, File b) => a.path.compareTo(b.path);
+    final int Function(File, File) pathCompare =
+        (File a, File b) => a.path.compareTo(b.path);
     incorrectFirstPartyFiles.sort(pathCompare);
     unrecognizedThirdPartyFiles.sort(pathCompare);
 
@@ -285,24 +275,6 @@ class LicenseCheckCommand extends PackageCommand {
       .where((FileSystemEntity entity) => entity is File)
       .map((FileSystemEntity file) => file as File)
       .toList();
-
-  // Returns the directories containing mapped submodules, if any.
-  Future<Iterable<Directory>> _getSubmoduleDirectories() async {
-    final List<Directory> submodulePaths = <Directory>[];
-    final Directory repoRoot =
-        packagesDir.fileSystem.directory((await gitDir).path);
-    final File submoduleSpec = repoRoot.childFile('.gitmodules');
-    if (submoduleSpec.existsSync()) {
-      final RegExp pathLine = RegExp(r'path\s*=\s*(.*)');
-      for (final String line in submoduleSpec.readAsLinesSync()) {
-        final RegExpMatch? match = pathLine.firstMatch(line);
-        if (match != null) {
-          submodulePaths.add(repoRoot.childDirectory(match.group(1)!.trim()));
-        }
-      }
-    }
-    return submodulePaths;
-  }
 }
 
 enum _LicenseFailureType { incorrectFirstParty, unknownThirdParty }

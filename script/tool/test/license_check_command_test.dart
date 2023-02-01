@@ -7,35 +7,24 @@ import 'package:file/file.dart';
 import 'package:file/memory.dart';
 import 'package:flutter_plugin_tools/src/common/core.dart';
 import 'package:flutter_plugin_tools/src/license_check_command.dart';
-import 'package:mockito/mockito.dart';
-import 'package:platform/platform.dart';
 import 'package:test/test.dart';
 
-import 'common/package_command_test.mocks.dart';
-import 'mocks.dart';
 import 'util.dart';
 
 void main() {
-  group('LicenseCheckCommand', () {
+  group('$LicenseCheckCommand', () {
     late CommandRunner<void> runner;
     late FileSystem fileSystem;
-    late Platform platform;
     late Directory root;
 
     setUp(() {
       fileSystem = MemoryFileSystem();
-      platform = MockPlatformWithSeparator();
       final Directory packagesDir =
           fileSystem.currentDirectory.childDirectory('packages');
       root = packagesDir.parent;
 
-      final MockGitDir gitDir = MockGitDir();
-      when(gitDir.path).thenReturn(packagesDir.parent.path);
-
       final LicenseCheckCommand command = LicenseCheckCommand(
         packagesDir,
-        platform: platform,
-        gitDir: gitDir,
       );
       runner =
           CommandRunner<void>('license_test', 'Test for $LicenseCheckCommand');
@@ -48,7 +37,7 @@ void main() {
     /// [commentString] is added to the start of each line.
     /// [prefix] is added to the start of the entire block.
     /// [suffix] is added to the end of the entire block.
-    void writeLicense(
+    void _writeLicense(
       File file, {
       String comment = '// ',
       String prefix = '',
@@ -134,37 +123,10 @@ void main() {
       }
     });
 
-    test('ignores submodules', () async {
-      const String submoduleName = 'a_submodule';
-
-      final File submoduleSpec = root.childFile('.gitmodules');
-      submoduleSpec.writeAsStringSync('''
-[submodule "$submoduleName"]
-  path = $submoduleName
-  url = https://github.com/foo/$submoduleName
-''');
-
-      const List<String> submoduleFiles = <String>[
-        '$submoduleName/foo.dart',
-        '$submoduleName/a/b/bar.dart',
-        '$submoduleName/LICENSE',
-      ];
-      for (final String filePath in submoduleFiles) {
-        root.childFile(filePath).createSync(recursive: true);
-      }
-
-      final List<String> output =
-          await runCapturingPrint(runner, <String>['license-check']);
-
-      for (final String filePath in submoduleFiles) {
-        expect(output, isNot(contains('Checking $filePath')));
-      }
-    });
-
     test('passes if all checked files have license blocks', () async {
       final File checked = root.childFile('checked.cc');
       checked.createSync();
-      writeLicense(checked);
+      _writeLicense(checked);
       final File notChecked = root.childFile('not_checked.md');
       notChecked.createSync();
 
@@ -183,7 +145,7 @@ void main() {
     test('passes correct license blocks on Windows', () async {
       final File checked = root.childFile('checked.cc');
       checked.createSync();
-      writeLicense(checked, useCrlf: true);
+      _writeLicense(checked, useCrlf: true);
 
       final List<String> output =
           await runCapturingPrint(runner, <String>['license-check']);
@@ -200,13 +162,13 @@ void main() {
     test('handles the comment styles for all supported languages', () async {
       final File fileA = root.childFile('file_a.cc');
       fileA.createSync();
-      writeLicense(fileA);
+      _writeLicense(fileA, comment: '// ');
       final File fileB = root.childFile('file_b.sh');
       fileB.createSync();
-      writeLicense(fileB, comment: '# ');
+      _writeLicense(fileB, comment: '# ');
       final File fileC = root.childFile('file_c.html');
       fileC.createSync();
-      writeLicense(fileC, comment: '', prefix: '<!-- ', suffix: ' -->');
+      _writeLicense(fileC, comment: '', prefix: '<!-- ', suffix: ' -->');
 
       final List<String> output =
           await runCapturingPrint(runner, <String>['license-check']);
@@ -225,10 +187,10 @@ void main() {
     test('fails if any checked files are missing license blocks', () async {
       final File goodA = root.childFile('good.cc');
       goodA.createSync();
-      writeLicense(goodA);
+      _writeLicense(goodA);
       final File goodB = root.childFile('good.h');
       goodB.createSync();
-      writeLicense(goodB);
+      _writeLicense(goodB);
       root.childFile('bad.cc').createSync();
       root.childFile('bad.h').createSync();
 
@@ -255,10 +217,10 @@ void main() {
     test('fails if any checked files are missing just the copyright', () async {
       final File good = root.childFile('good.cc');
       good.createSync();
-      writeLicense(good);
+      _writeLicense(good);
       final File bad = root.childFile('bad.cc');
       bad.createSync();
-      writeLicense(bad, copyright: '');
+      _writeLicense(bad, copyright: '');
 
       Error? commandError;
       final List<String> output = await runCapturingPrint(
@@ -282,10 +244,10 @@ void main() {
     test('fails if any checked files are missing just the license', () async {
       final File good = root.childFile('good.cc');
       good.createSync();
-      writeLicense(good);
+      _writeLicense(good);
       final File bad = root.childFile('bad.cc');
       bad.createSync();
-      writeLicense(bad, license: <String>[]);
+      _writeLicense(bad, license: <String>[]);
 
       Error? commandError;
       final List<String> output = await runCapturingPrint(
@@ -310,7 +272,7 @@ void main() {
         () async {
       final File thirdPartyFile = root.childFile('third_party.cc');
       thirdPartyFile.createSync();
-      writeLicense(thirdPartyFile, copyright: 'Copyright 2017 Someone Else');
+      _writeLicense(thirdPartyFile, copyright: 'Copyright 2017 Someone Else');
 
       Error? commandError;
       final List<String> output = await runCapturingPrint(
@@ -339,7 +301,7 @@ void main() {
           .childDirectory('third_party')
           .childFile('file.cc');
       thirdPartyFile.createSync(recursive: true);
-      writeLicense(thirdPartyFile,
+      _writeLicense(thirdPartyFile,
           copyright: 'Copyright 2017 Workiva Inc.',
           license: <String>[
             'Licensed under the Apache License, Version 2.0 (the "License");',
@@ -366,7 +328,7 @@ void main() {
           .childDirectory('third_party')
           .childFile('first_party.cc');
       firstPartyFileInThirdParty.createSync(recursive: true);
-      writeLicense(firstPartyFileInThirdParty);
+      _writeLicense(firstPartyFileInThirdParty);
 
       final List<String> output =
           await runCapturingPrint(runner, <String>['license-check']);
@@ -383,10 +345,10 @@ void main() {
     test('fails for licenses that the tool does not expect', () async {
       final File good = root.childFile('good.cc');
       good.createSync();
-      writeLicense(good);
+      _writeLicense(good);
       final File bad = root.childDirectory('third_party').childFile('bad.cc');
       bad.createSync(recursive: true);
-      writeLicense(bad, license: <String>[
+      _writeLicense(bad, license: <String>[
         'This program is free software: you can redistribute it and/or modify',
         'it under the terms of the GNU General Public License',
       ]);
@@ -414,10 +376,10 @@ void main() {
         () async {
       final File good = root.childFile('good.cc');
       good.createSync();
-      writeLicense(good);
+      _writeLicense(good);
       final File bad = root.childDirectory('third_party').childFile('bad.cc');
       bad.createSync(recursive: true);
-      writeLicense(
+      _writeLicense(
         bad,
         copyright: 'Copyright 2017 Some New Authors.',
         license: <String>[
@@ -545,11 +507,6 @@ void main() {
           ]));
     });
   });
-}
-
-class MockPlatformWithSeparator extends MockPlatform {
-  @override
-  String get pathSeparator => isWindows ? r'\' : '/';
 }
 
 const String _correctLicenseFileText = '''

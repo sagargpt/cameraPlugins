@@ -16,7 +16,7 @@ import 'mocks.dart';
 import 'util.dart';
 
 void main() {
-  group('LintAndroidCommand', () {
+  group('$LintAndroidCommand', () {
     FileSystem fileSystem;
     late Directory packagesDir;
     late CommandRunner<void> runner;
@@ -24,7 +24,7 @@ void main() {
     late RecordingProcessRunner processRunner;
 
     setUp(() {
-      fileSystem = MemoryFileSystem();
+      fileSystem = MemoryFileSystem(style: FileSystemStyle.posix);
       packagesDir = createPackagesDirectory(fileSystem: fileSystem);
       mockPlatform = MockPlatform();
       processRunner = RecordingProcessRunner();
@@ -40,7 +40,7 @@ void main() {
     });
 
     test('runs gradle lint', () async {
-      final RepositoryPackage plugin =
+      final Directory pluginDir =
           createFakePlugin('plugin1', packagesDir, extraFiles: <String>[
         'example/android/gradlew',
       ], platformSupport: <String, PlatformDetails>{
@@ -48,7 +48,7 @@ void main() {
       });
 
       final Directory androidDir =
-          plugin.getExamples().first.platformDirectory(FlutterPlatform.android);
+          pluginDir.childDirectory('example').childDirectory('android');
 
       final List<String> output =
           await runCapturingPrint(runner, <String>['lint-android']);
@@ -61,45 +61,6 @@ void main() {
             const <String>['plugin1:lintDebug'],
             androidDir.path,
           ),
-        ]),
-      );
-
-      expect(
-          output,
-          containsAllInOrder(<Matcher>[
-            contains('Running for plugin1'),
-            contains('No issues found!'),
-          ]));
-    });
-
-    test('runs on all examples', () async {
-      final List<String> examples = <String>['example1', 'example2'];
-      final RepositoryPackage plugin = createFakePlugin('plugin1', packagesDir,
-          examples: examples,
-          extraFiles: <String>[
-            'example/example1/android/gradlew',
-            'example/example2/android/gradlew',
-          ],
-          platformSupport: <String, PlatformDetails>{
-            platformAndroid: const PlatformDetails(PlatformSupport.inline)
-          });
-
-      final Iterable<Directory> exampleAndroidDirs = plugin.getExamples().map(
-          (RepositoryPackage example) =>
-              example.platformDirectory(FlutterPlatform.android));
-
-      final List<String> output =
-          await runCapturingPrint(runner, <String>['lint-android']);
-
-      expect(
-        processRunner.recordedCalls,
-        orderedEquals(<ProcessCall>[
-          for (final Directory directory in exampleAndroidDirs)
-            ProcessCall(
-              directory.childFile('gradlew').path,
-              const <String>['plugin1:lintDebug'],
-              directory.path,
-            ),
         ]),
       );
 
@@ -128,26 +89,18 @@ void main() {
           output,
           containsAllInOrder(
             <Matcher>[
-              contains('Build examples before linting'),
+              contains('Build example before linting'),
             ],
           ));
     });
 
     test('fails if linting finds issues', () async {
-      final RepositoryPackage plugin =
-          createFakePlugin('plugin1', packagesDir, extraFiles: <String>[
-        'example/android/gradlew',
-      ], platformSupport: <String, PlatformDetails>{
-        platformAndroid: const PlatformDetails(PlatformSupport.inline)
-      });
+      createFakePlugin('plugin1', packagesDir,
+          platformSupport: <String, PlatformDetails>{
+            platformAndroid: const PlatformDetails(PlatformSupport.inline)
+          });
 
-      final String gradlewPath = plugin
-          .getExamples()
-          .first
-          .platformDirectory(FlutterPlatform.android)
-          .childFile('gradlew')
-          .path;
-      processRunner.mockProcessesForExecutable[gradlewPath] = <io.Process>[
+      processRunner.mockProcessesForExecutable['gradlew'] = <io.Process>[
         MockProcess(exitCode: 1),
       ];
 
@@ -162,7 +115,7 @@ void main() {
           output,
           containsAllInOrder(
             <Matcher>[
-              contains('The following packages had errors:'),
+              contains('Build example before linting'),
             ],
           ));
     });
@@ -178,7 +131,7 @@ void main() {
           containsAllInOrder(
             <Matcher>[
               contains(
-                  'SKIPPING: Plugin does not have an Android implementation.')
+                  'SKIPPING: Plugin does not have an Android implemenatation.')
             ],
           ));
     });
@@ -197,7 +150,7 @@ void main() {
           containsAllInOrder(
             <Matcher>[
               contains(
-                  'SKIPPING: Plugin does not have an Android implementation.')
+                  'SKIPPING: Plugin does not have an Android implemenatation.')
             ],
           ));
     });

@@ -10,6 +10,7 @@ import 'package:file/file.dart';
 import 'package:http/http.dart' as http;
 import 'package:platform/platform.dart';
 import 'package:pub_semver/pub_semver.dart';
+import 'package:pubspec_parse/pubspec_parse.dart';
 
 import 'common/core.dart';
 import 'common/package_looping_command.dart';
@@ -33,13 +34,16 @@ class PublishCheckCommand extends PackageLoopingCommand {
       help: 'Allows the pre-release SDK warning to pass.\n'
           'When enabled, a pub warning, which asks to publish the package as a pre-release version when '
           'the SDK constraint is a pre-release version, is ignored.',
+      defaultsTo: false,
     );
     argParser.addFlag(_machineFlag,
         help: 'Switch outputs to a machine readable JSON. \n'
             'The JSON contains a "status" field indicating the final status of the command, the possible values are:\n'
             '    $_statusNeedsPublish: There is at least one package need to be published. They also passed all publish checks.\n'
             '    $_statusMessageNoPublish: There are no packages needs to be published. Either no pubspec change detected or all versions have already been published.\n'
-            '    $_statusMessageError: Some error has occurred.');
+            '    $_statusMessageError: Some error has occurred.',
+        defaultsTo: false,
+        negatable: true);
   }
 
   static const String _allowPrereleaseFlag = 'allow-pre-release';
@@ -55,7 +59,7 @@ class PublishCheckCommand extends PackageLoopingCommand {
 
   @override
   final String description =
-      'Checks to make sure that a package *could* be published.';
+      'Checks to make sure that a plugin *could* be published.';
 
   final PubVersionFinder _pubVersionFinder;
 
@@ -130,23 +134,7 @@ class PublishCheckCommand extends PackageLoopingCommand {
     }
   }
 
-  // Run `dart pub get` on the examples of [package].
-  Future<void> _fetchExampleDeps(RepositoryPackage package) async {
-    for (final RepositoryPackage example in package.getExamples()) {
-      await processRunner.runAndStream(
-        'dart',
-        <String>['pub', 'get'],
-        workingDir: example.directory,
-      );
-    }
-  }
-
   Future<bool> _hasValidPublishCheckRun(RepositoryPackage package) async {
-    // `pub publish` does not do `dart pub get` inside `example` directories
-    // of a package (but they're part of the analysis output!).
-    // Issue: https://github.com/flutter/flutter/issues/113788
-    await _fetchExampleDeps(package);
-
     print('Running pub publish --dry-run:');
     final io.Process process = await processRunner.start(
       flutterCommand,
@@ -259,12 +247,12 @@ HTTP response: ${pubVersionFinderResponse.httpResponse.body}
 
   bool _passesAuthorsCheck(RepositoryPackage package) {
     final List<String> pathComponents =
-        package.directory.fileSystem.path.split(package.path);
+        package.directory.fileSystem.path.split(package.directory.path);
     if (pathComponents.contains('third_party')) {
       // Third-party packages aren't required to have an AUTHORS file.
       return true;
     }
-    return package.authorsFile.existsSync();
+    return package.directory.childFile('AUTHORS').existsSync();
   }
 
   void _printImportantStatusMessage(String message, {required bool isError}) {

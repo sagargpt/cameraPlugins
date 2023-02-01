@@ -13,25 +13,12 @@ import 'package:flutter_plugin_tools/src/common/core.dart';
 import 'package:flutter_plugin_tools/src/common/file_utils.dart';
 import 'package:flutter_plugin_tools/src/common/plugin_utils.dart';
 import 'package:flutter_plugin_tools/src/common/process_runner.dart';
-import 'package:flutter_plugin_tools/src/common/repository_package.dart';
 import 'package:meta/meta.dart';
 import 'package:path/path.dart' as p;
 import 'package:platform/platform.dart';
 import 'package:quiver/collection.dart';
 
 import 'mocks.dart';
-
-export 'package:flutter_plugin_tools/src/common/repository_package.dart';
-
-/// The relative path from a package to the file that is used to enable
-/// README excerpting for a package.
-// This is a shared constant to ensure that both readme-check and
-// update-excerpt are looking for the same file, so that readme-check can't
-// get out of sync with what actually drives excerpting.
-const String kReadmeExcerptConfigPath = 'example/build.excerpt.yaml';
-
-const String _defaultDartConstraint = '>=2.14.0 <3.0.0';
-const String _defaultFlutterConstraint = '>=2.5.0';
 
 /// Returns the exe name that command will use when running Flutter on
 /// [platform].
@@ -60,12 +47,16 @@ Directory createPackagesDirectory(
 class PlatformDetails {
   const PlatformDetails(
     this.type, {
+    this.variants = const <String>[],
     this.hasNativeCode = true,
     this.hasDartCode = false,
   });
 
   /// The type of support for the platform.
   final PlatformSupport type;
+
+  /// Any 'supportVariants' to list in the pubspec.
+  final List<String> variants;
 
   /// Whether or not the plugin includes native code.
   ///
@@ -78,20 +69,6 @@ class PlatformDetails {
   final bool hasDartCode;
 }
 
-/// Returns the 'example' directory for [package].
-///
-/// This is deliberately not a method on [RepositoryPackage] since actual tool
-/// code should essentially never need this, and instead be using
-/// [RepositoryPackage.getExamples] to avoid assuming there's a single example
-/// directory. However, needing to construct paths with the example directory
-/// is very common in test code.
-///
-/// This returns a Directory rather than a RepositoryPackage because there is no
-/// guarantee that the returned directory is a package.
-Directory getExampleDir(RepositoryPackage package) {
-  return package.directory.childDirectory('example');
-}
-
 /// Creates a plugin package with the given [name] in [packagesDirectory].
 ///
 /// [platformSupport] is a map of platform string to the support details for
@@ -99,7 +76,8 @@ Directory getExampleDir(RepositoryPackage package) {
 ///
 /// [extraFiles] is an optional list of plugin-relative paths, using Posix
 /// separators, of extra files to create in the plugin.
-RepositoryPackage createFakePlugin(
+// TODO(stuartmorgan): Convert the return to a RepositoryPackage.
+Directory createFakePlugin(
   String name,
   Directory parentDirectory, {
   List<String> examples = const <String>['example'],
@@ -107,179 +85,134 @@ RepositoryPackage createFakePlugin(
   Map<String, PlatformDetails> platformSupport =
       const <String, PlatformDetails>{},
   String? version = '0.0.1',
-  String flutterConstraint = _defaultFlutterConstraint,
-  String dartConstraint = _defaultDartConstraint,
 }) {
-  final RepositoryPackage package = createFakePackage(
-    name,
-    parentDirectory,
-    isFlutter: true,
-    examples: examples,
-    extraFiles: extraFiles,
-    version: version,
-    flutterConstraint: flutterConstraint,
-    dartConstraint: dartConstraint,
-  );
+  final Directory pluginDirectory = createFakePackage(name, parentDirectory,
+      isFlutter: true,
+      examples: examples,
+      extraFiles: extraFiles,
+      version: version);
 
   createFakePubspec(
-    package,
+    pluginDirectory,
     name: name,
+    isFlutter: true,
     isPlugin: true,
     platformSupport: platformSupport,
     version: version,
-    flutterConstraint: flutterConstraint,
-    dartConstraint: dartConstraint,
   );
 
-  return package;
+  return pluginDirectory;
 }
 
 /// Creates a plugin package with the given [name] in [packagesDirectory].
 ///
 /// [extraFiles] is an optional list of package-relative paths, using unix-style
 /// separators, of extra files to create in the package.
-///
-/// If [includeCommonFiles] is true, common but non-critical files like
-/// CHANGELOG.md, README.md, and AUTHORS will be included.
-///
-/// If non-null, [directoryName] will be used for the directory instead of
-/// [name].
-RepositoryPackage createFakePackage(
+// TODO(stuartmorgan): Convert the return to a RepositoryPackage.
+Directory createFakePackage(
   String name,
   Directory parentDirectory, {
   List<String> examples = const <String>['example'],
   List<String> extraFiles = const <String>[],
   bool isFlutter = false,
   String? version = '0.0.1',
-  String flutterConstraint = _defaultFlutterConstraint,
-  String dartConstraint = _defaultDartConstraint,
-  bool includeCommonFiles = true,
-  String? directoryName,
-  String? publishTo,
 }) {
-  final RepositoryPackage package =
-      RepositoryPackage(parentDirectory.childDirectory(directoryName ?? name));
-  package.directory.createSync(recursive: true);
+  final Directory packageDirectory = parentDirectory.childDirectory(name);
+  packageDirectory.createSync(recursive: true);
 
-  package.libDirectory.createSync();
-  createFakePubspec(package,
-      name: name,
-      isFlutter: isFlutter,
-      version: version,
-      flutterConstraint: flutterConstraint,
-      dartConstraint: dartConstraint);
-  if (includeCommonFiles) {
-    package.changelogFile.writeAsStringSync('''
+  createFakePubspec(packageDirectory,
+      name: name, isFlutter: isFlutter, version: version);
+  createFakeCHANGELOG(packageDirectory, '''
 ## $version
   * Some changes.
   ''');
-    package.readmeFile.writeAsStringSync('A very useful package');
-    package.authorsFile.writeAsStringSync('Google Inc.');
-  }
+  createFakeAuthors(packageDirectory);
 
   if (examples.length == 1) {
-    createFakePackage('${name}_example', package.directory,
-        directoryName: examples.first,
-        examples: <String>[],
-        includeCommonFiles: false,
-        isFlutter: isFlutter,
-        publishTo: 'none',
-        flutterConstraint: flutterConstraint,
-        dartConstraint: dartConstraint);
+    final Directory exampleDir = packageDirectory.childDirectory(examples.first)
+      ..createSync();
+    createFakePubspec(exampleDir,
+        name: '${name}_example', isFlutter: isFlutter, publishTo: 'none');
   } else if (examples.isNotEmpty) {
-    final Directory examplesDirectory = getExampleDir(package)..createSync();
-    for (final String exampleName in examples) {
-      createFakePackage(exampleName, examplesDirectory,
-          examples: <String>[],
-          includeCommonFiles: false,
-          isFlutter: isFlutter,
-          publishTo: 'none',
-          flutterConstraint: flutterConstraint,
-          dartConstraint: dartConstraint);
+    final Directory exampleDir = packageDirectory.childDirectory('example')
+      ..createSync();
+    for (final String example in examples) {
+      final Directory currentExample = exampleDir.childDirectory(example)
+        ..createSync();
+      createFakePubspec(currentExample,
+          name: example, isFlutter: isFlutter, publishTo: 'none');
     }
   }
 
   final p.Context posixContext = p.posix;
   for (final String file in extraFiles) {
-    childFileWithSubcomponents(package.directory, posixContext.split(file))
+    childFileWithSubcomponents(packageDirectory, posixContext.split(file))
         .createSync(recursive: true);
   }
 
-  return package;
+  return packageDirectory;
 }
 
-/// Creates a `pubspec.yaml` file for [package].
+void createFakeCHANGELOG(Directory parent, String texts) {
+  parent.childFile('CHANGELOG.md').createSync();
+  parent.childFile('CHANGELOG.md').writeAsStringSync(texts);
+}
+
+/// Creates a `pubspec.yaml` file with a flutter dependency.
 ///
 /// [platformSupport] is a map of platform string to the support details for
 /// that platform. If empty, no `plugin` entry will be created unless `isPlugin`
 /// is set to `true`.
 void createFakePubspec(
-  RepositoryPackage package, {
+  Directory parent, {
   String name = 'fake_package',
   bool isFlutter = true,
   bool isPlugin = false,
   Map<String, PlatformDetails> platformSupport =
       const <String, PlatformDetails>{},
-  String? publishTo,
+  String publishTo = 'http://no_pub_server.com',
   String? version,
-  String dartConstraint = _defaultDartConstraint,
-  String flutterConstraint = _defaultFlutterConstraint,
 }) {
   isPlugin |= platformSupport.isNotEmpty;
-
-  String environmentSection = '''
-environment:
-  sdk: "$dartConstraint"
+  parent.childFile('pubspec.yaml').createSync();
+  String yaml = '''
+name: $name
 ''';
-  String dependenciesSection = '''
-dependencies:
-''';
-  String pluginSection = '';
-
-  // Add Flutter-specific entries if requested.
   if (isFlutter) {
-    environmentSection += '''
-  flutter: "$flutterConstraint"
-''';
-    dependenciesSection += '''
-  flutter:
-    sdk: flutter
-''';
-
     if (isPlugin) {
-      pluginSection += '''
+      yaml += '''
 flutter:
   plugin:
     platforms:
 ''';
       for (final MapEntry<String, PlatformDetails> platform
           in platformSupport.entries) {
-        pluginSection +=
-            _pluginPlatformSection(platform.key, platform.value, name);
+        yaml += _pluginPlatformSection(platform.key, platform.value, name);
       }
     }
-  }
-
-  // Default to a fake server to avoid ever accidentally publishing something
-  // from a test. Does not use 'none' since that changes the behavior of some
-  // commands.
-  final String publishToSection =
-      'publish_to: ${publishTo ?? 'http://no_pub_server.com'}';
-
-  final String yaml = '''
-name: $name
-${(version != null) ? 'version: $version' : ''}
-$publishToSection
-
-$environmentSection
-
-$dependenciesSection
-
-$pluginSection
+    yaml += '''
+dependencies:
+  flutter:
+    sdk: flutter
 ''';
+  }
+  if (version != null) {
+    yaml += '''
+version: $version
+''';
+  }
+  if (publishTo.isNotEmpty) {
+    yaml += '''
+publish_to: $publishTo # Hardcoded safeguard to prevent this from somehow being published by a broken test.
+''';
+  }
+  parent.childFile('pubspec.yaml').writeAsStringSync(yaml);
+}
 
-  package.pubspecFile.createSync();
-  package.pubspecFile.writeAsStringSync(yaml);
+void createFakeAuthors(Directory parent) {
+  final File authorsFile = parent.childFile('AUTHORS');
+  authorsFile.createSync();
+  authorsFile.writeAsStringSync('Google Inc.');
 }
 
 String _pluginPlatformSection(
@@ -323,21 +256,32 @@ String _pluginPlatformSection(
         assert(false, 'Unrecognized platform: $platform');
         break;
     }
-    entry = '${lines.join('\n')}\n';
+    entry = lines.join('\n') + '\n';
+  }
+
+  // Add any variants.
+  if (support.variants.isNotEmpty) {
+    entry += '''
+        supportedVariants:
+''';
+    for (final String variant in support.variants) {
+      entry += '''
+          - $variant
+''';
+    }
   }
 
   return entry;
 }
 
+typedef _ErrorHandler = void Function(Error error);
+
 /// Run the command [runner] with the given [args] and return
 /// what was printed.
 /// A custom [errorHandler] can be used to handle the runner error as desired without throwing.
 Future<List<String>> runCapturingPrint(
-  CommandRunner<void> runner,
-  List<String> args, {
-  Function(Error error)? errorHandler,
-  Function(Exception error)? exceptionHandler,
-}) async {
+    CommandRunner<void> runner, List<String> args,
+    {_ErrorHandler? errorHandler}) async {
   final List<String> prints = <String>[];
   final ZoneSpecification spec = ZoneSpecification(
     print: (_, __, ___, String message) {
@@ -353,11 +297,6 @@ Future<List<String>> runCapturingPrint(
       rethrow;
     }
     errorHandler(e);
-  } on Exception catch (e) {
-    if (exceptionHandler == null) {
-      rethrow;
-    }
-    exceptionHandler(e);
   }
 
   return prints;
@@ -405,10 +344,10 @@ class RecordingProcessRunner extends ProcessRunner {
     final io.Process? process = _getProcessToReturn(executable);
     final List<String>? processStdout =
         await process?.stdout.transform(stdoutEncoding.decoder).toList();
-    final String stdout = processStdout?.join() ?? '';
+    final String stdout = processStdout?.join('') ?? '';
     final List<String>? processStderr =
         await process?.stderr.transform(stderrEncoding.decoder).toList();
-    final String stderr = processStderr?.join() ?? '';
+    final String stderr = processStderr?.join('') ?? '';
 
     final io.ProcessResult result = process == null
         ? io.ProcessResult(1, 0, '', '')
@@ -453,7 +392,7 @@ class ProcessCall {
   final String? workingDir;
 
   @override
-  bool operator ==(Object other) {
+  bool operator ==(dynamic other) {
     return other is ProcessCall &&
         executable == other.executable &&
         listsEqual(args, other.args) &&
@@ -461,7 +400,8 @@ class ProcessCall {
   }
 
   @override
-  int get hashCode => Object.hash(executable, args, workingDir);
+  int get hashCode =>
+      (executable.hashCode) ^ (args.hashCode) ^ (workingDir?.hashCode ?? 0);
 
   @override
   String toString() {

@@ -37,17 +37,13 @@ class TestCommand extends PackageLoopingCommand {
       'This command requires "flutter" to be in your path.';
 
   @override
-  PackageLoopingType get packageLoopingType =>
-      PackageLoopingType.includeAllSubpackages;
-
-  @override
   Future<PackageResult> runForPackage(RepositoryPackage package) async {
-    if (!package.testDirectory.existsSync()) {
+    if (!package.directory.childDirectory('test').existsSync()) {
       return PackageResult.skip('No test/ directory.');
     }
 
     bool passed;
-    if (package.requiresFlutter()) {
+    if (isFlutterPackage(package.directory)) {
       passed = await _runFlutterTests(package);
     } else {
       passed = await _runDartTests(package);
@@ -92,6 +88,7 @@ class TestCommand extends PackageLoopingCommand {
     exitCode = await processRunner.runAndStream(
       'dart',
       <String>[
+        'pub',
         'run',
         if (experiment.isNotEmpty) '--enable-experiment=$experiment',
         'test',

@@ -44,16 +44,10 @@ void main() {
     });
 
     test('publish check all packages', () async {
-      final RepositoryPackage plugin1 = createFakePlugin(
-        'plugin_tools_test_package_a',
-        packagesDir,
-        examples: <String>[],
-      );
-      final RepositoryPackage plugin2 = createFakePlugin(
-        'plugin_tools_test_package_b',
-        packagesDir,
-        examples: <String>[],
-      );
+      final Directory plugin1Dir =
+          createFakePlugin('plugin_tools_test_package_a', packagesDir);
+      final Directory plugin2Dir =
+          createFakePlugin('plugin_tools_test_package_b', packagesDir);
 
       await runCapturingPrint(runner, <String>['publish-check']);
 
@@ -63,55 +57,12 @@ void main() {
             ProcessCall(
                 'flutter',
                 const <String>['pub', 'publish', '--', '--dry-run'],
-                plugin1.path),
+                plugin1Dir.path),
             ProcessCall(
                 'flutter',
                 const <String>['pub', 'publish', '--', '--dry-run'],
-                plugin2.path),
+                plugin2Dir.path),
           ]));
-    });
-
-    test('publish prepares dependencies of examples (when present)', () async {
-      final RepositoryPackage plugin1 = createFakePlugin(
-        'plugin_tools_test_package_a',
-        packagesDir,
-        examples: <String>['example1', 'example2'],
-      );
-      final RepositoryPackage plugin2 = createFakePlugin(
-        'plugin_tools_test_package_b',
-        packagesDir,
-        examples: <String>[],
-      );
-
-      await runCapturingPrint(runner, <String>['publish-check']);
-
-      // For plugin1, these are the expected pub get calls that will happen
-      final Iterable<ProcessCall> pubGetCalls =
-          plugin1.getExamples().map((RepositoryPackage example) {
-        return ProcessCall(
-          'dart',
-          const <String>['pub', 'get'],
-          example.path,
-        );
-      });
-
-      expect(pubGetCalls, hasLength(2));
-      expect(
-        processRunner.recordedCalls,
-        orderedEquals(<ProcessCall>[
-          // plugin1 has 2 examples, so there's some 'dart pub get' calls.
-          ...pubGetCalls,
-          ProcessCall(
-              'flutter',
-              const <String>['pub', 'publish', '--', '--dry-run'],
-              plugin1.path),
-          // plugin2 has no examples, so there's no extra 'dart pub get' calls.
-          ProcessCall(
-              'flutter',
-              const <String>['pub', 'publish', '--', '--dry-run'],
-              plugin2.path),
-        ]),
-      );
     });
 
     test('fail on negative test', () async {
@@ -138,8 +89,8 @@ void main() {
     });
 
     test('fail on bad pubspec', () async {
-      final RepositoryPackage package = createFakePlugin('c', packagesDir);
-      await package.pubspecFile.writeAsString('bad-yaml');
+      final Directory dir = createFakePlugin('c', packagesDir);
+      await dir.childFile('pubspec.yaml').writeAsString('bad-yaml');
 
       Error? commandError;
       final List<String> output = await runCapturingPrint(
@@ -157,9 +108,8 @@ void main() {
     });
 
     test('fails if AUTHORS is missing', () async {
-      final RepositoryPackage package =
-          createFakePackage('a_package', packagesDir);
-      package.authorsFile.delete();
+      final Directory package = createFakePackage('a_package', packagesDir);
+      package.childFile('AUTHORS').delete();
 
       Error? commandError;
       final List<String> output = await runCapturingPrint(
@@ -178,12 +128,12 @@ void main() {
     });
 
     test('does not require AUTHORS for third-party', () async {
-      final RepositoryPackage package = createFakePackage(
+      final Directory package = createFakePackage(
           'a_package',
           packagesDir.parent
               .childDirectory('third_party')
               .childDirectory('packages'));
-      package.authorsFile.delete();
+      package.childFile('AUTHORS').delete();
 
       final List<String> output =
           await runCapturingPrint(runner, <String>['publish-check']);
@@ -422,11 +372,11 @@ void main() {
       );
       runner.addCommand(command);
 
-      final RepositoryPackage plugin =
+      final Directory plugin1Dir =
           createFakePlugin('no_publish_a', packagesDir, version: '0.1.0');
       createFakePlugin('no_publish_b', packagesDir, version: '0.2.0');
 
-      await plugin.pubspecFile.writeAsString('bad-yaml');
+      await plugin1Dir.childFile('pubspec.yaml').writeAsString('bad-yaml');
 
       bool hasError = false;
       final List<String> output = await runCapturingPrint(

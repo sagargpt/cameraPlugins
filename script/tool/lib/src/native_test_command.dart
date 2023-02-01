@@ -198,22 +198,22 @@ this command.
   Future<_PlatformResult> _testAndroid(
       RepositoryPackage plugin, _TestMode mode) async {
     bool exampleHasUnitTests(RepositoryPackage example) {
-      return example
-              .platformDirectory(FlutterPlatform.android)
+      return example.directory
+              .childDirectory('android')
               .childDirectory('app')
               .childDirectory('src')
               .childDirectory('test')
               .existsSync() ||
-          plugin
-              .platformDirectory(FlutterPlatform.android)
+          example.directory.parent
+              .childDirectory('android')
               .childDirectory('src')
               .childDirectory('test')
               .existsSync();
     }
 
     bool exampleHasNativeIntegrationTests(RepositoryPackage example) {
-      final Directory integrationTestDirectory = example
-          .platformDirectory(FlutterPlatform.android)
+      final Directory integrationTestDirectory = example.directory
+          .childDirectory('android')
           .childDirectory('app')
           .childDirectory('src')
           .childDirectory('androidTest');
@@ -269,7 +269,7 @@ this command.
       _printRunningExampleTestsMessage(example, 'Android');
 
       final GradleProject project = GradleProject(
-        example,
+        example.directory,
         processRunner: processRunner,
         platform: platform,
       );
@@ -406,9 +406,9 @@ this command.
       );
 
       // The exit code from 'xcodebuild test' when there are no tests.
-      const int xcodebuildNoTestExitCode = 66;
+      const int _xcodebuildNoTestExitCode = 66;
       switch (exitCode) {
-        case xcodebuildNoTestExitCode:
+        case _xcodebuildNoTestExitCode:
           _printNoExampleTestsMessage(example, platform);
           break;
         case 0:
