@@ -3,7 +3,7 @@
 // found in the LICENSE file.
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_sign_in_web/src/js_interop/gapiauth2.dart' as gapi;
+import 'package:google_sign_in_web/src/generated/gapiauth2.dart' as gapi;
 import 'package:google_sign_in_web/src/utils.dart';
 import 'package:integration_test/integration_test.dart';
 
@@ -51,12 +51,10 @@ class FakeGoogleUser extends Fake implements gapi.GoogleUser {
   @override
   gapi.BasicProfile? getBasicProfile() => _basicProfile;
 
-  // ignore: use_setters_to_change_properties
   void setIsSignedIn(bool isSignedIn) {
     _isSignedIn = isSignedIn;
   }
 
-  // ignore: use_setters_to_change_properties
   void setBasicProfile(gapi.BasicProfile basicProfile) {
     _basicProfile = basicProfile;
   }

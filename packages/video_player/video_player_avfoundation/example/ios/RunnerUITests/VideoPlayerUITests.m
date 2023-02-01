@@ -4,7 +4,6 @@
 
 @import os.log;
 @import XCTest;
-@import CoreGraphics;
 
 @interface VideoPlayerUITests : XCTestCase
 @property(nonatomic, strong) XCUIApplication *app;
@@ -31,23 +30,19 @@
   XCTAssertTrue([playButton waitForExistenceWithTimeout:30.0]);
   [playButton tap];
 
-  NSPredicate *find1xButton = [NSPredicate predicateWithFormat:@"label CONTAINS '1.0x'"];
-  XCUIElement *playbackSpeed1x = [app.staticTexts elementMatchingPredicate:find1xButton];
-  BOOL foundPlaybackSpeed1x = [playbackSpeed1x waitForExistenceWithTimeout:30.0];
-  XCTAssertTrue(foundPlaybackSpeed1x);
+  XCUIElement *playbackSpeed1x = app.staticTexts[@"Playback speed\n1.0x"];
+  XCTAssertTrue([playbackSpeed1x waitForExistenceWithTimeout:30.0]);
   [playbackSpeed1x tap];
 
   XCUIElement *playbackSpeed5xButton = app.buttons[@"5.0x"];
   XCTAssertTrue([playbackSpeed5xButton waitForExistenceWithTimeout:30.0]);
   [playbackSpeed5xButton tap];
 
-  NSPredicate *find5xButton = [NSPredicate predicateWithFormat:@"label CONTAINS '5.0x'"];
-  XCUIElement *playbackSpeed5x = [app.staticTexts elementMatchingPredicate:find5xButton];
-  BOOL foundPlaybackSpeed5x = [playbackSpeed5x waitForExistenceWithTimeout:30.0];
-  XCTAssertTrue(foundPlaybackSpeed5x);
+  XCUIElement *playbackSpeed5x = app.staticTexts[@"Playback speed\n5.0x"];
+  XCTAssertTrue([playbackSpeed5x waitForExistenceWithTimeout:30.0]);
 
   // Cycle through tabs.
-  for (NSString *tabName in @[ @"Asset mp4", @"Remote mp4" ]) {
+  for (NSString *tabName in @[ @"Asset", @"Remote" ]) {
     NSPredicate *predicate = [NSPredicate predicateWithFormat:@"label BEGINSWITH %@", tabName];
     XCUIElement *unselectedTab = [app.staticTexts elementMatchingPredicate:predicate];
     XCTAssertTrue([unselectedTab waitForExistenceWithTimeout:30.0]);

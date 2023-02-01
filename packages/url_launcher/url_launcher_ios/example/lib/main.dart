@@ -10,12 +10,10 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -33,7 +31,7 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -53,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
         headers: <String, String>{'my_header_key': 'my_header_value'},
       );
     } else {
-      throw Exception('Could not launch $url');
+      throw 'Could not launch $url';
     }
   }
 
@@ -70,7 +68,7 @@ class _MyHomePageState extends State<MyHomePage> {
         headers: <String, String>{'my_header_key': 'my_header_value'},
       );
     } else {
-      throw Exception('Could not launch $url');
+      throw 'Could not launch $url';
     }
   }
 
@@ -87,7 +85,7 @@ class _MyHomePageState extends State<MyHomePage> {
         headers: <String, String>{},
       );
     } else {
-      throw Exception('Could not launch $url');
+      throw 'Could not launch $url';
     }
   }
 
@@ -104,7 +102,7 @@ class _MyHomePageState extends State<MyHomePage> {
         headers: <String, String>{},
       );
     } else {
-      throw Exception('Could not launch $url');
+      throw 'Could not launch $url';
     }
   }
 
@@ -155,7 +153,7 @@ class _MyHomePageState extends State<MyHomePage> {
         headers: <String, String>{},
       );
     } else {
-      throw Exception('Could not launch $url');
+      throw 'Could not launch $url';
     }
   }
 
@@ -226,6 +224,7 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () => setState(() {
                   _launched = _launchInWebViewOrVC(toLaunch);
                   Timer(const Duration(seconds: 5), () {
+                    print('Closing WebView after 5 seconds...');
                     UrlLauncherPlatform.instance.closeWebView();
                   });
                 }),

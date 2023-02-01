@@ -2,10 +2,8 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: avoid_print
-
+import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_platform_interface/in_app_purchase_platform_interface.dart';
-import '../in_app_purchase_storekit.dart';
 
 import '../store_kit_wrappers.dart';
 
@@ -15,7 +13,7 @@ class InAppPurchaseStoreKitPlatformAddition
   /// Present Code Redemption Sheet.
   ///
   /// Available on devices running iOS 14 and iPadOS 14 and later.
-  Future<void> presentCodeRedemptionSheet() {
+  Future presentCodeRedemptionSheet() {
     return SKPaymentQueueWrapper().presentCodeRedemptionSheet();
   }
 
@@ -25,7 +23,7 @@ class InAppPurchaseStoreKitPlatformAddition
   Future<PurchaseVerificationData?> refreshPurchaseVerificationData() async {
     await SKRequestMaker().startRefreshReceiptRequest();
     try {
-      final String receipt = await SKReceiptManager.retrieveReceiptData();
+      String receipt = await SKReceiptManager.retrieveReceiptData();
       return PurchaseVerificationData(
           localVerificationData: receipt,
           serverVerificationData: receipt,
@@ -48,7 +46,7 @@ class InAppPurchaseStoreKitPlatformAddition
   ///
   /// When set to `null` the payment queue delegate will be removed and the
   /// default behaviour will apply (see [documentation](https://developer.apple.com/documentation/storekit/skpaymentqueue/3182429-delegate?language=objc)).
-  Future<void> setDelegate(SKPaymentQueueDelegateWrapper? delegate) =>
+  Future setDelegate(SKPaymentQueueDelegateWrapper? delegate) =>
       SKPaymentQueueWrapper().setDelegate(delegate);
 
   /// Shows the price consent sheet if the user has not yet responded to a
@@ -59,6 +57,6 @@ class InAppPurchaseStoreKitPlatformAddition
   /// `SKPaymentQueueDelegateWrapper.shouldShowPriceConsent()` method was called.
   ///
   /// See documentation of StoreKit's [`-[SKPaymentQueue showPriceConsentIfNeeded]`](https://developer.apple.com/documentation/storekit/skpaymentqueue/3521327-showpriceconsentifneeded?language=objc).
-  Future<void> showPriceConsentIfNeeded() =>
+  Future showPriceConsentIfNeeded() =>
       SKPaymentQueueWrapper().showPriceConsentIfNeeded();
 }

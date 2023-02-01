@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: public_member_api_docs, avoid_print
+// ignore_for_file: public_member_api_docs
 
 import 'dart:async';
 import 'dart:convert' show json;
@@ -22,7 +22,7 @@ GoogleSignIn _googleSignIn = GoogleSignIn(
 
 void main() {
   runApp(
-    const MaterialApp(
+    MaterialApp(
       title: 'Google Sign In',
       home: SignInDemo(),
     ),
@@ -30,8 +30,6 @@ void main() {
 }
 
 class SignInDemo extends StatefulWidget {
-  const SignInDemo({Key? key}) : super(key: key);
-
   @override
   State createState() => SignInDemoState();
 }
@@ -86,14 +84,12 @@ class SignInDemoState extends State<SignInDemo> {
   String? _pickFirstNamedContact(Map<String, dynamic> data) {
     final List<dynamic>? connections = data['connections'] as List<dynamic>?;
     final Map<String, dynamic>? contact = connections?.firstWhere(
-      (dynamic contact) => (contact as Map<Object?, dynamic>)['names'] != null,
+      (dynamic contact) => contact['names'] != null,
       orElse: () => null,
     ) as Map<String, dynamic>?;
     if (contact != null) {
-      final List<dynamic> names = contact['names'] as List<dynamic>;
-      final Map<String, dynamic>? name = names.firstWhere(
-        (dynamic name) =>
-            (name as Map<Object?, dynamic>)['displayName'] != null,
+      final Map<String, dynamic>? name = contact['names'].firstWhere(
+        (dynamic name) => name['displayName'] != null,
         orElse: () => null,
       ) as Map<String, dynamic>?;
       if (name != null) {
@@ -129,8 +125,8 @@ class SignInDemoState extends State<SignInDemo> {
           const Text('Signed in successfully.'),
           Text(_contactText),
           ElevatedButton(
-            onPressed: _handleSignOut,
             child: const Text('SIGN OUT'),
+            onPressed: _handleSignOut,
           ),
           ElevatedButton(
             child: const Text('REFRESH'),
@@ -144,8 +140,8 @@ class SignInDemoState extends State<SignInDemo> {
         children: <Widget>[
           const Text('You are not currently signed in.'),
           ElevatedButton(
-            onPressed: _handleSignIn,
             child: const Text('SIGN IN'),
+            onPressed: _handleSignIn,
           ),
         ],
       );

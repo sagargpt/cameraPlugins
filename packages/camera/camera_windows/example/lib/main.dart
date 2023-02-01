@@ -9,14 +9,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 /// Example app for Camera Windows plugin.
 class MyApp extends StatefulWidget {
-  /// Default Constructor
-  const MyApp({Key? key}) : super(key: key);
-
   @override
   State<MyApp> createState() => _MyAppState();
 }
@@ -114,6 +111,7 @@ class _MyAppState extends State<MyApp> {
 
       await CameraPlatform.instance.initializeCamera(
         cameraId,
+        imageFormatGroup: ImageFormatGroup.unknown,
       );
 
       final CameraInitializedEvent event = await initialized;
@@ -187,8 +185,8 @@ class _MyAppState extends State<MyApp> {
   }
 
   Future<void> _takePicture() async {
-    final XFile file = await CameraPlatform.instance.takePicture(_cameraId);
-    _showInSnackBar('Picture captured to: ${file.path}');
+    final XFile _file = await CameraPlatform.instance.takePicture(_cameraId);
+    _showInSnackBar('Picture captured to: ${_file.path}');
   }
 
   Future<void> _recordTimed(int seconds) async {
@@ -228,10 +226,10 @@ class _MyAppState extends State<MyApp> {
         if (!_recording) {
           await CameraPlatform.instance.startVideoRecording(_cameraId);
         } else {
-          final XFile file =
+          final XFile _file =
               await CameraPlatform.instance.stopVideoRecording(_cameraId);
 
-          _showInSnackBar('Video captured to: ${file.path}');
+          _showInSnackBar('Video captured to: ${_file.path}');
         }
 
         if (mounted) {
@@ -428,6 +426,7 @@ class _MyAppState extends State<MyApp> {
                   vertical: 10,
                 ),
                 child: Align(
+                  alignment: Alignment.center,
                   child: Container(
                     constraints: const BoxConstraints(
                       maxHeight: 500,

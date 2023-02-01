@@ -5,6 +5,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart';
+import 'package:google_sign_in_platform_interface/src/types.dart';
 import 'package:google_sign_in_platform_interface/src/utils.dart';
 
 const Map<String, String> kUserData = <String, String>{
@@ -95,7 +96,7 @@ void main() {
     });
 
     test('Other functions pass through arguments to the channel', () async {
-      final Map<void Function(), Matcher> tests = <void Function(), Matcher>{
+      final Map<Function, Matcher> tests = <Function, Matcher>{
         () {
           googleSignIn.init(
               hostedDomain: 'example.com',
@@ -107,8 +108,6 @@ void main() {
           'scopes': <String>['two', 'scopes'],
           'signInOption': 'SignInOption.games',
           'clientId': 'fakeClientId',
-          'serverClientId': null,
-          'forceCodeForRefreshToken': false,
         }),
         () {
           googleSignIn.getTokens(
@@ -132,31 +131,11 @@ void main() {
         googleSignIn.isSignedIn: isMethodCall('isSignedIn', arguments: null),
       };
 
-      for (final void Function() f in tests.keys) {
+      for (final Function f in tests.keys) {
         f();
       }
 
       expect(log, tests.values);
-    });
-
-    test('initWithParams passes through arguments to the channel', () async {
-      await googleSignIn.initWithParams(const SignInInitParameters(
-          hostedDomain: 'example.com',
-          scopes: <String>['two', 'scopes'],
-          signInOption: SignInOption.games,
-          clientId: 'fakeClientId',
-          serverClientId: 'fakeServerClientId',
-          forceCodeForRefreshToken: true));
-      expect(log, <Matcher>[
-        isMethodCall('init', arguments: <String, dynamic>{
-          'hostedDomain': 'example.com',
-          'scopes': <String>['two', 'scopes'],
-          'signInOption': 'SignInOption.games',
-          'clientId': 'fakeClientId',
-          'serverClientId': 'fakeServerClientId',
-          'forceCodeForRefreshToken': true,
-        }),
-      ]);
     });
   });
 }

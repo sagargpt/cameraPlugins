@@ -12,13 +12,13 @@ import io.flutter.Log;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.common.EventChannel;
-import io.flutter.plugins.videoplayer.Messages.AndroidVideoPlayerApi;
 import io.flutter.plugins.videoplayer.Messages.CreateMessage;
 import io.flutter.plugins.videoplayer.Messages.LoopingMessage;
 import io.flutter.plugins.videoplayer.Messages.MixWithOthersMessage;
 import io.flutter.plugins.videoplayer.Messages.PlaybackSpeedMessage;
 import io.flutter.plugins.videoplayer.Messages.PositionMessage;
 import io.flutter.plugins.videoplayer.Messages.TextureMessage;
+import io.flutter.plugins.videoplayer.Messages.VideoPlayerApi;
 import io.flutter.plugins.videoplayer.Messages.VolumeMessage;
 import io.flutter.view.TextureRegistry;
 import java.security.KeyManagementException;
@@ -27,7 +27,7 @@ import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
 
 /** Android platform implementation of the VideoPlayerPlugin. */
-public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
+public class VideoPlayerPlugin implements FlutterPlugin, VideoPlayerApi {
   private static final String TAG = "VideoPlayerPlugin";
   private final LongSparseArray<VideoPlayer> videoPlayers = new LongSparseArray<>();
   private FlutterState flutterState;
@@ -61,6 +61,7 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
 
   @Override
   public void onAttachedToEngine(FlutterPluginBinding binding) {
+
     if (android.os.Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
       try {
         HttpsURLConnection.setDefaultSSLSocketFactory(new CustomSSLSocketFactory());
@@ -240,11 +241,11 @@ public class VideoPlayerPlugin implements FlutterPlugin, AndroidVideoPlayerApi {
     }
 
     void startListening(VideoPlayerPlugin methodCallHandler, BinaryMessenger messenger) {
-      AndroidVideoPlayerApi.setup(messenger, methodCallHandler);
+      VideoPlayerApi.setup(messenger, methodCallHandler);
     }
 
     void stopListening(BinaryMessenger messenger) {
-      AndroidVideoPlayerApi.setup(messenger, null);
+      VideoPlayerApi.setup(messenger, null);
     }
   }
 }

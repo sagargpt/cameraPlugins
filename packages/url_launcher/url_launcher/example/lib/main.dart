@@ -11,12 +11,10 @@ import 'package:url_launcher/link.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -34,7 +32,7 @@ class MyHomePage extends StatefulWidget {
   final String title;
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  _MyHomePageState createState() => _MyHomePageState();
 }
 
 class _MyHomePageState extends State<MyHomePage> {
@@ -46,62 +44,67 @@ class _MyHomePageState extends State<MyHomePage> {
   void initState() {
     super.initState();
     // Check for phone call support.
-    canLaunchUrl(Uri(scheme: 'tel', path: '123')).then((bool result) {
+    canLaunch('tel:123').then((bool result) {
       setState(() {
         _hasCallSupport = result;
       });
     });
   }
 
-  Future<void> _launchInBrowser(Uri url) async {
-    if (!await launchUrl(
+  Future<void> _launchInBrowser(String url) async {
+    if (!await launch(
       url,
-      mode: LaunchMode.externalApplication,
+      forceSafariVC: false,
+      forceWebView: false,
+      headers: <String, String>{'my_header_key': 'my_header_value'},
     )) {
-      throw Exception('Could not launch $url');
+      throw 'Could not launch $url';
     }
   }
 
-  Future<void> _launchInWebViewOrVC(Uri url) async {
-    if (!await launchUrl(
+  Future<void> _launchInWebViewOrVC(String url) async {
+    if (!await launch(
       url,
-      mode: LaunchMode.inAppWebView,
-      webViewConfiguration: const WebViewConfiguration(
-          headers: <String, String>{'my_header_key': 'my_header_value'}),
+      forceSafariVC: true,
+      forceWebView: true,
+      headers: <String, String>{'my_header_key': 'my_header_value'},
     )) {
-      throw Exception('Could not launch $url');
+      throw 'Could not launch $url';
     }
   }
 
-  Future<void> _launchInWebViewWithoutJavaScript(Uri url) async {
-    if (!await launchUrl(
+  Future<void> _launchInWebViewWithJavaScript(String url) async {
+    if (!await launch(
       url,
-      mode: LaunchMode.inAppWebView,
-      webViewConfiguration: const WebViewConfiguration(enableJavaScript: false),
+      forceSafariVC: true,
+      forceWebView: true,
+      enableJavaScript: true,
     )) {
-      throw Exception('Could not launch $url');
+      throw 'Could not launch $url';
     }
   }
 
-  Future<void> _launchInWebViewWithoutDomStorage(Uri url) async {
-    if (!await launchUrl(
+  Future<void> _launchInWebViewWithDomStorage(String url) async {
+    if (!await launch(
       url,
-      mode: LaunchMode.inAppWebView,
-      webViewConfiguration: const WebViewConfiguration(enableDomStorage: false),
+      forceSafariVC: true,
+      forceWebView: true,
+      enableDomStorage: true,
     )) {
-      throw Exception('Could not launch $url');
+      throw 'Could not launch $url';
     }
   }
 
-  Future<void> _launchUniversalLinkIos(Uri url) async {
-    final bool nativeAppLaunchSucceeded = await launchUrl(
+  Future<void> _launchUniversalLinkIos(String url) async {
+    final bool nativeAppLaunchSucceeded = await launch(
       url,
-      mode: LaunchMode.externalNonBrowserApplication,
+      forceSafariVC: false,
+      universalLinksOnly: true,
     );
     if (!nativeAppLaunchSucceeded) {
-      await launchUrl(
+      await launch(
         url,
-        mode: LaunchMode.inAppWebView,
+        forceSafariVC: true,
       );
     }
   }
@@ -115,19 +118,22 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   Future<void> _makePhoneCall(String phoneNumber) async {
+    // Use `Uri` to ensure that `phoneNumber` is properly URL-encoded.
+    // Just using 'tel:$phoneNumber' would create invalid URLs in some cases,
+    // such as spaces in the input, which would cause `launch` to fail on some
+    // platforms.
     final Uri launchUri = Uri(
       scheme: 'tel',
       path: phoneNumber,
     );
-    await launchUrl(launchUri);
+    await launch(launchUri.toString());
   }
 
   @override
   Widget build(BuildContext context) {
     // onPressed calls using this URL are not gated on a 'canLaunch' check
     // because the assumption is that every device can launch a web URL.
-    final Uri toLaunch =
-        Uri(scheme: 'https', host: 'www.cylog.org', path: 'headers/');
+    const String toLaunch = 'https://www.cylog.org/headers/';
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -154,9 +160,9 @@ class _MyHomePageState extends State<MyHomePage> {
                     ? const Text('Make phone call')
                     : const Text('Calling not supported'),
               ),
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Text(toLaunch.toString()),
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Text(toLaunch),
               ),
               ElevatedButton(
                 onPressed: () => setState(() {
@@ -173,15 +179,15 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               ElevatedButton(
                 onPressed: () => setState(() {
-                  _launched = _launchInWebViewWithoutJavaScript(toLaunch);
+                  _launched = _launchInWebViewWithJavaScript(toLaunch);
                 }),
-                child: const Text('Launch in app (JavaScript OFF)'),
+                child: const Text('Launch in app(JavaScript ON)'),
               ),
               ElevatedButton(
                 onPressed: () => setState(() {
-                  _launched = _launchInWebViewWithoutDomStorage(toLaunch);
+                  _launched = _launchInWebViewWithDomStorage(toLaunch);
                 }),
-                child: const Text('Launch in app (DOM storage OFF)'),
+                child: const Text('Launch in app(DOM storage ON)'),
               ),
               const Padding(padding: EdgeInsets.all(16.0)),
               ElevatedButton(
@@ -196,7 +202,8 @@ class _MyHomePageState extends State<MyHomePage> {
                 onPressed: () => setState(() {
                   _launched = _launchInWebViewOrVC(toLaunch);
                   Timer(const Duration(seconds: 5), () {
-                    closeInAppWebView();
+                    print('Closing WebView after 5 seconds...');
+                    closeWebView();
                   });
                 }),
                 child: const Text('Launch in app + close after 5 seconds'),

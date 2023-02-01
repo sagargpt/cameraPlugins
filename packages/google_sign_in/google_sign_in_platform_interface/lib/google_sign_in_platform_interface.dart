@@ -5,7 +5,6 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'src/method_channel_google_sign_in.dart';
 import 'src/types.dart';
@@ -21,19 +20,13 @@ export 'src/types.dart';
 /// ensures that the subclass will get the default implementation, while
 /// platform implementations that `implements` this interface will be broken by
 /// newly added [GoogleSignInPlatform] methods.
-abstract class GoogleSignInPlatform extends PlatformInterface {
-  /// Constructs a GoogleSignInPlatform.
-  GoogleSignInPlatform() : super(token: _token);
-
-  static final Object _token = Object();
-
+abstract class GoogleSignInPlatform {
   /// Only mock implementations should set this to `true`.
   ///
   /// Mockito mocks implement this class with `implements` which is forbidden
   /// (see class docs). This property provides a backdoor for mocks to skip the
   /// verification that the class isn't implemented with `implements`.
   @visibleForTesting
-  @Deprecated('Use MockPlatformInterfaceMixin instead')
   bool get isMock => false;
 
   /// The default instance of [GoogleSignInPlatform] to use.
@@ -51,12 +44,27 @@ abstract class GoogleSignInPlatform extends PlatformInterface {
   // https://github.com/flutter/flutter/issues/43368
   static set instance(GoogleSignInPlatform instance) {
     if (!instance.isMock) {
-      PlatformInterface.verify(instance, _token);
+      try {
+        instance._verifyProvidesDefaultImplementations();
+      } on NoSuchMethodError catch (_) {
+        throw AssertionError(
+            'Platform interfaces must not be implemented with `implements`');
+      }
     }
     _instance = instance;
   }
 
-  /// Initializes the plugin. Deprecated: call [initWithParams] instead.
+  /// This method ensures that [GoogleSignInPlatform] isn't implemented with `implements`.
+  ///
+  /// See class docs for more details on why using `implements` to implement
+  /// [GoogleSignInPlatform] is forbidden.
+  ///
+  /// This private method is called by the [instance] setter, which should fail
+  /// if the provided instance is a class implemented with `implements`.
+  void _verifyProvidesDefaultImplementations() {}
+
+  /// Initializes the plugin. You must call this method before calling other
+  /// methods.
   ///
   /// The [hostedDomain] argument specifies a hosted domain restriction. By
   /// setting this, sign in will be restricted to accounts of the user in the
@@ -79,21 +87,6 @@ abstract class GoogleSignInPlatform extends PlatformInterface {
     String? clientId,
   }) async {
     throw UnimplementedError('init() has not been implemented.');
-  }
-
-  /// Initializes the plugin with specified [params]. You must call this method
-  /// before calling other methods.
-  ///
-  /// See:
-  ///
-  /// * [SignInInitParameters]
-  Future<void> initWithParams(SignInInitParameters params) async {
-    await init(
-      scopes: params.scopes,
-      signInOption: params.signInOption,
-      hostedDomain: params.hostedDomain,
-      clientId: params.clientId,
-    );
   }
 
   /// Attempts to reuse pre-existing credentials to sign in again, without user interaction.

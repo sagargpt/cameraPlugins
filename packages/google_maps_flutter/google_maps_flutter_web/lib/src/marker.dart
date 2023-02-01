@@ -6,6 +6,14 @@ part of google_maps_flutter_web;
 
 /// The `MarkerController` class wraps a [gmaps.Marker], how it handles events, and its associated (optional) [gmaps.InfoWindow] widget.
 class MarkerController {
+  gmaps.Marker? _marker;
+
+  final bool _consumeTapEvents;
+
+  final gmaps.InfoWindow? _infoWindow;
+
+  bool _infoWindowShown = false;
+
   /// Creates a `MarkerController`, which wraps a [gmaps.Marker] object, its `onTap`/`onDrag` behavior, and its associated [gmaps.InfoWindow].
   MarkerController({
     required gmaps.Marker marker,
@@ -19,12 +27,12 @@ class MarkerController {
         _infoWindow = infoWindow,
         _consumeTapEvents = consumeTapEvents {
     if (onTap != null) {
-      marker.onClick.listen((gmaps.MapMouseEvent event) {
+      marker.onClick.listen((event) {
         onTap.call();
       });
     }
     if (onDragStart != null) {
-      marker.onDragstart.listen((gmaps.MapMouseEvent event) {
+      marker.onDragstart.listen((event) {
         if (marker != null) {
           marker.position = event.latLng;
         }
@@ -32,7 +40,7 @@ class MarkerController {
       });
     }
     if (onDrag != null) {
-      marker.onDrag.listen((gmaps.MapMouseEvent event) {
+      marker.onDrag.listen((event) {
         if (marker != null) {
           marker.position = event.latLng;
         }
@@ -40,7 +48,7 @@ class MarkerController {
       });
     }
     if (onDragEnd != null) {
-      marker.onDragend.listen((gmaps.MapMouseEvent event) {
+      marker.onDragend.listen((event) {
         if (marker != null) {
           marker.position = event.latLng;
         }
@@ -48,14 +56,6 @@ class MarkerController {
       });
     }
   }
-
-  gmaps.Marker? _marker;
-
-  final bool _consumeTapEvents;
-
-  final gmaps.InfoWindow? _infoWindow;
-
-  bool _infoWindowShown = false;
 
   /// Returns `true` if this Controller will use its own `onTap` handler to consume events.
   bool get consumeTapEvents => _consumeTapEvents;

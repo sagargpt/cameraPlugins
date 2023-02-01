@@ -65,7 +65,7 @@ void main() {
 
     test('queryProductDetails', () async {
       final ProductDetailsResponse response =
-          await inAppPurchase.queryProductDetails(<String>{});
+          await inAppPurchase.queryProductDetails(Set<String>());
       expect(response.notFoundIDs.isEmpty, true);
       expect(response.productDetails.isEmpty, true);
       expect(fakePlatform.log, <Matcher>[
@@ -87,24 +87,22 @@ void main() {
     });
 
     test('buyConsumable', () async {
-      final PurchaseParam purchaseParam =
-          PurchaseParam(productDetails: productDetails);
+      final purchaseParam = PurchaseParam(productDetails: productDetails);
       final bool result = await inAppPurchase.buyConsumable(
         purchaseParam: purchaseParam,
       );
 
       expect(result, true);
       expect(fakePlatform.log, <Matcher>[
-        isMethodCall('buyConsumable', arguments: <dynamic, dynamic>{
-          'purchaseParam': purchaseParam,
-          'autoConsume': true,
+        isMethodCall('buyConsumable', arguments: {
+          "purchaseParam": purchaseParam,
+          "autoConsume": true,
         }),
       ]);
     });
 
     test('buyConsumable with autoConsume=false', () async {
-      final PurchaseParam purchaseParam =
-          PurchaseParam(productDetails: productDetails);
+      final purchaseParam = PurchaseParam(productDetails: productDetails);
       final bool result = await inAppPurchase.buyConsumable(
         purchaseParam: purchaseParam,
         autoConsume: false,
@@ -112,9 +110,9 @@ void main() {
 
       expect(result, true);
       expect(fakePlatform.log, <Matcher>[
-        isMethodCall('buyConsumable', arguments: <dynamic, dynamic>{
-          'purchaseParam': purchaseParam,
-          'autoConsume': false,
+        isMethodCall('buyConsumable', arguments: {
+          "purchaseParam": purchaseParam,
+          "autoConsume": false,
         }),
       ]);
     });
@@ -140,33 +138,31 @@ void main() {
 class MockInAppPurchasePlatform extends Fake
     with MockPlatformInterfaceMixin
     implements InAppPurchasePlatform {
-  final List<MethodCall> log = <MethodCall>[];
+  final List<MethodCall> log = [];
 
   @override
   Future<bool> isAvailable() {
-    log.add(const MethodCall('isAvailable'));
-    return Future<bool>.value(true);
+    log.add(MethodCall('isAvailable'));
+    return Future.value(true);
   }
 
   @override
   Stream<List<PurchaseDetails>> get purchaseStream {
-    log.add(const MethodCall('purchaseStream'));
-    return const Stream<List<PurchaseDetails>>.empty();
+    log.add(MethodCall('purchaseStream'));
+    return Stream.empty();
   }
 
   @override
   Future<ProductDetailsResponse> queryProductDetails(Set<String> identifiers) {
-    log.add(const MethodCall('queryProductDetails'));
-    return Future<ProductDetailsResponse>.value(ProductDetailsResponse(
-      productDetails: <ProductDetails>[],
-      notFoundIDs: <String>[],
-    ));
+    log.add(MethodCall('queryProductDetails'));
+    return Future.value(
+        ProductDetailsResponse(productDetails: [], notFoundIDs: []));
   }
 
   @override
   Future<bool> buyNonConsumable({required PurchaseParam purchaseParam}) {
-    log.add(const MethodCall('buyNonConsumable'));
-    return Future<bool>.value(true);
+    log.add(MethodCall('buyNonConsumable'));
+    return Future.value(true);
   }
 
   @override
@@ -174,22 +170,22 @@ class MockInAppPurchasePlatform extends Fake
     required PurchaseParam purchaseParam,
     bool autoConsume = true,
   }) {
-    log.add(MethodCall('buyConsumable', <String, Object?>{
-      'purchaseParam': purchaseParam,
-      'autoConsume': autoConsume,
+    log.add(MethodCall('buyConsumable', {
+      "purchaseParam": purchaseParam,
+      "autoConsume": autoConsume,
     }));
-    return Future<bool>.value(true);
+    return Future.value(true);
   }
 
   @override
   Future<void> completePurchase(PurchaseDetails purchase) {
-    log.add(const MethodCall('completePurchase'));
-    return Future<void>.value();
+    log.add(MethodCall('completePurchase'));
+    return Future.value(null);
   }
 
   @override
   Future<void> restorePurchases({String? applicationUserName}) {
-    log.add(const MethodCall('restorePurchases'));
-    return Future<void>.value();
+    log.add(MethodCall('restorePurchases'));
+    return Future.value(null);
   }
 }

@@ -4,6 +4,7 @@
 
 // ignore_for_file: public_member_api_docs
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'mini_controller.dart';
@@ -20,7 +21,7 @@ class _App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Scaffold(
         key: const ValueKey<String>('home_page'),
         appBar: AppBar(
@@ -30,20 +31,15 @@ class _App extends StatelessWidget {
             tabs: <Widget>[
               Tab(
                 icon: Icon(Icons.cloud),
-                text: 'Remote mp4',
+                text: 'Remote',
               ),
-              Tab(
-                icon: Icon(Icons.favorite),
-                text: 'Remote enc m3u8',
-              ),
-              Tab(icon: Icon(Icons.insert_drive_file), text: 'Asset mp4'),
+              Tab(icon: Icon(Icons.insert_drive_file), text: 'Asset'),
             ],
           ),
         ),
         body: TabBarView(
           children: <Widget>[
             _BumbleBeeRemoteVideo(),
-            _BumbleBeeEncryptedLiveStream(),
             _ButterFlyAssetVideo(),
           ],
         ),
@@ -154,59 +150,6 @@ class _BumbleBeeRemoteVideoState extends State<_BumbleBeeRemoteVideo> {
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _BumbleBeeEncryptedLiveStream extends StatefulWidget {
-  @override
-  _BumbleBeeEncryptedLiveStreamState createState() =>
-      _BumbleBeeEncryptedLiveStreamState();
-}
-
-class _BumbleBeeEncryptedLiveStreamState
-    extends State<_BumbleBeeEncryptedLiveStream> {
-  late MiniController _controller;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = MiniController.network(
-      'https://flutter.github.io/assets-for-api-docs/assets/videos/hls/encrypted_bee.m3u8',
-    );
-
-    _controller.addListener(() {
-      setState(() {});
-    });
-    _controller.initialize();
-
-    _controller.play();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Column(
-        children: <Widget>[
-          Container(padding: const EdgeInsets.only(top: 20.0)),
-          const Text('With remote encrypted m3u8'),
-          Container(
-            padding: const EdgeInsets.all(20),
-            child: _controller.value.isInitialized
-                ? AspectRatio(
-                    aspectRatio: _controller.value.aspectRatio,
-                    child: VideoPlayer(_controller),
-                  )
-                : const Text('loading...'),
           ),
         ],
       ),

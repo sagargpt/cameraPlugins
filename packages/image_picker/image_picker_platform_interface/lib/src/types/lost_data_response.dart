@@ -4,8 +4,7 @@
 
 import 'package:cross_file/cross_file.dart';
 import 'package:flutter/services.dart';
-
-import 'types.dart';
+import 'package:image_picker_platform_interface/src/types/types.dart';
 
 /// The response object of [ImagePicker.getLostData].
 ///

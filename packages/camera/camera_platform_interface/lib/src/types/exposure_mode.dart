@@ -18,6 +18,8 @@ String serializeExposureMode(ExposureMode exposureMode) {
       return 'locked';
     case ExposureMode.auto:
       return 'auto';
+    default:
+      throw ArgumentError('Unknown ExposureMode value');
   }
 }
 

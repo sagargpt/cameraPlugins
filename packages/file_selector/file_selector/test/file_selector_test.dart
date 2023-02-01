@@ -6,13 +6,14 @@ import 'package:file_selector/file_selector.dart';
 import 'package:file_selector_platform_interface/file_selector_platform_interface.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+import 'package:test/fake.dart';
 
 void main() {
   late FakeFileSelector fakePlatformImplementation;
   const String initialDirectory = '/home/flutteruser';
   const String confirmButtonText = 'Use this profile picture';
   const String suggestedName = 'suggested_name';
-  const List<XTypeGroup> acceptedTypeGroups = <XTypeGroup>[
+  final List<XTypeGroup> acceptedTypeGroups = <XTypeGroup>[
     XTypeGroup(label: 'documents', mimeTypes: <String>[
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessing',
@@ -284,12 +285,10 @@ class FakeFileSelector extends Fake
     this.confirmButtonText = confirmButtonText;
   }
 
-  // ignore: use_setters_to_change_properties
   void setFileResponse(List<XFile> files) {
     this.files = files;
   }
 
-  // ignore: use_setters_to_change_properties
   void setPathResponse(String path) {
     this.path = path;
   }

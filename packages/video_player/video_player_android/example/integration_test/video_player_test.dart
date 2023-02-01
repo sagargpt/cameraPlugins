@@ -24,13 +24,10 @@ const Duration _playDuration = Duration(seconds: 1);
 const String _videoAssetKey = 'assets/Butterfly-209.mp4';
 
 // Returns the URL to load an asset from this example app as a network source.
-//
-// TODO(stuartmorgan): Convert this to a local `HttpServer` that vends the
-// assets directly, https://github.com/flutter/flutter/issues/95420
 String getUrlForAssetAsNetworkSource(String assetKey) {
   return 'https://github.com/flutter/plugins/blob/'
       // This hash can be rolled forward to pick up newly-added assets.
-      'cb381ced070d356799dddf24aca38ce0579d3d7b'
+      'cba393233e559c925a4daf71b06b4bb01c606762'
       '/packages/video_player/video_player/example/'
       '$assetKey'
       '?raw=true';
@@ -39,12 +36,12 @@ String getUrlForAssetAsNetworkSource(String assetKey) {
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
-  late MiniController controller;
-  tearDown(() async => controller.dispose());
+  late MiniController _controller;
+  tearDown(() async => _controller.dispose());
 
   group('asset videos', () {
     setUp(() {
-      controller = MiniController.asset(_videoAssetKey);
+      _controller = MiniController.asset(_videoAssetKey);
     });
 
     testWidgets('registers expected implementation',
@@ -54,44 +51,45 @@ void main() {
     });
 
     testWidgets('can be initialized', (WidgetTester tester) async {
-      await controller.initialize();
+      await _controller.initialize();
 
-      expect(controller.value.isInitialized, true);
-      expect(await controller.position, Duration.zero);
-      expect(controller.value.duration,
+      expect(_controller.value.isInitialized, true);
+      expect(await _controller.position, const Duration(seconds: 0));
+      expect(_controller.value.duration,
           const Duration(seconds: 7, milliseconds: 540));
     });
 
     testWidgets('can be played', (WidgetTester tester) async {
-      await controller.initialize();
+      await _controller.initialize();
 
-      await controller.play();
+      await _controller.play();
       await tester.pumpAndSettle(_playDuration);
 
-      expect(await controller.position, greaterThan(Duration.zero));
+      expect(
+          await _controller.position, greaterThan(const Duration(seconds: 0)));
     });
 
     testWidgets('can seek', (WidgetTester tester) async {
-      await controller.initialize();
+      await _controller.initialize();
 
-      await controller.seekTo(const Duration(seconds: 3));
+      await _controller.seekTo(const Duration(seconds: 3));
 
-      expect(await controller.position, const Duration(seconds: 3));
+      expect(await _controller.position, const Duration(seconds: 3));
     });
 
     testWidgets('can be paused', (WidgetTester tester) async {
-      await controller.initialize();
+      await _controller.initialize();
 
       // Play for a second, then pause, and then wait a second.
-      await controller.play();
+      await _controller.play();
       await tester.pumpAndSettle(_playDuration);
-      await controller.pause();
+      await _controller.pause();
       await tester.pumpAndSettle(_playDuration);
-      final Duration pausedPosition = (await controller.position)!;
+      final Duration pausedPosition = (await _controller.position)!;
       await tester.pumpAndSettle(_playDuration);
 
       // Verify that we stopped playing after the pause.
-      expect(await controller.position, pausedPosition);
+      expect(await _controller.position, pausedPosition);
     });
   });
 
@@ -106,48 +104,50 @@ void main() {
       final File file = File('$tempDir/$filename');
       await file.writeAsBytes(bytes.buffer.asInt8List());
 
-      controller = MiniController.file(file);
+      _controller = MiniController.file(file);
     });
 
     testWidgets('test video player using static file() method as constructor',
         (WidgetTester tester) async {
-      await controller.initialize();
+      await _controller.initialize();
 
-      await controller.play();
+      await _controller.play();
       await tester.pumpAndSettle(_playDuration);
 
-      expect(await controller.position, greaterThan(Duration.zero));
+      expect(
+          await _controller.position, greaterThan(const Duration(seconds: 0)));
     });
   });
 
   group('network videos', () {
     setUp(() {
       final String videoUrl = getUrlForAssetAsNetworkSource(_videoAssetKey);
-      controller = MiniController.network(videoUrl);
+      _controller = MiniController.network(videoUrl);
     });
 
     testWidgets('reports buffering status', (WidgetTester tester) async {
-      await controller.initialize();
+      await _controller.initialize();
 
       final Completer<void> started = Completer<void>();
       final Completer<void> ended = Completer<void>();
-      controller.addListener(() {
-        if (!started.isCompleted && controller.value.isBuffering) {
+      _controller.addListener(() {
+        if (!started.isCompleted && _controller.value.isBuffering) {
           started.complete();
         }
         if (started.isCompleted &&
-            !controller.value.isBuffering &&
+            !_controller.value.isBuffering &&
             !ended.isCompleted) {
           ended.complete();
         }
       });
 
-      await controller.play();
-      await controller.seekTo(const Duration(seconds: 5));
+      await _controller.play();
+      await _controller.seekTo(const Duration(seconds: 5));
       await tester.pumpAndSettle(_playDuration);
-      await controller.pause();
+      await _controller.pause();
 
-      expect(await controller.position, greaterThan(Duration.zero));
+      expect(
+          await _controller.position, greaterThan(const Duration(seconds: 0)));
 
       await expectLater(started.future, completes);
       await expectLater(ended.future, completes);
@@ -155,7 +155,7 @@ void main() {
 
     testWidgets('live stream duration != 0', (WidgetTester tester) async {
       final MiniController livestreamController = MiniController.network(
-        'https://flutter.github.io/assets-for-api-docs/assets/videos/hls/bee.m3u8',
+        'https://cph-p2p-msl.akamaized.net/hls/live/2000341/test/master.m3u8',
       );
       await livestreamController.initialize();
 

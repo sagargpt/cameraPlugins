@@ -192,10 +192,10 @@ HRESULT RecordHandler::InitRecordSink(IMFCaptureEngine* capture_engine,
   return hr;
 }
 
-HRESULT RecordHandler::StartRecord(const std::string& file_path,
-                                   int64_t max_duration,
-                                   IMFCaptureEngine* capture_engine,
-                                   IMFMediaType* base_media_type) {
+bool RecordHandler::StartRecord(const std::string& file_path,
+                                int64_t max_duration,
+                                IMFCaptureEngine* capture_engine,
+                                IMFMediaType* base_media_type) {
   assert(!file_path.empty());
   assert(capture_engine);
   assert(base_media_type);
@@ -206,21 +206,23 @@ HRESULT RecordHandler::StartRecord(const std::string& file_path,
   recording_start_timestamp_us_ = -1;
   recording_duration_us_ = 0;
 
-  HRESULT hr = InitRecordSink(capture_engine, base_media_type);
-  if (FAILED(hr)) {
-    return hr;
+  if (FAILED(InitRecordSink(capture_engine, base_media_type))) {
+    return false;
   }
 
   recording_state_ = RecordState::kStarting;
-  return capture_engine->StartRecord();
+  capture_engine->StartRecord();
+
+  return true;
 }
 
-HRESULT RecordHandler::StopRecord(IMFCaptureEngine* capture_engine) {
+bool RecordHandler::StopRecord(IMFCaptureEngine* capture_engine) {
   if (recording_state_ == RecordState::kRunning) {
     recording_state_ = RecordState::kStopping;
-    return capture_engine->StopRecord(true, false);
+    HRESULT hr = capture_engine->StopRecord(true, false);
+    return SUCCEEDED(hr);
   }
-  return E_FAIL;
+  return false;
 }
 
 void RecordHandler::OnRecordStarted() {
@@ -236,7 +238,6 @@ void RecordHandler::OnRecordStopped() {
     recording_duration_us_ = 0;
     max_video_duration_ms_ = -1;
     recording_state_ = RecordState::kNotStarted;
-    type_ = RecordingType::kNone;
   }
 }
 

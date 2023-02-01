@@ -15,9 +15,8 @@ const CameraPosition _kInitialPosition =
     CameraPosition(target: LatLng(-33.852, 151.211), zoom: 11.0);
 
 class SnapshotPage extends GoogleMapExampleAppPage {
-  const SnapshotPage({Key? key})
-      : super(const Icon(Icons.camera_alt), 'Take a snapshot of the map',
-            key: key);
+  SnapshotPage()
+      : super(const Icon(Icons.camera_alt), 'Take a snapshot of the map');
 
   @override
   Widget build(BuildContext context) {
@@ -40,7 +39,7 @@ class _SnapshotBodyState extends State<_SnapshotBody> {
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
+        children: [
           SizedBox(
             height: 180,
             child: GoogleMap(
@@ -49,10 +48,9 @@ class _SnapshotBodyState extends State<_SnapshotBody> {
             ),
           ),
           TextButton(
-            child: const Text('Take a snapshot'),
+            child: Text('Take a snapshot'),
             onPressed: () async {
-              final Uint8List? imageBytes =
-                  await _mapController?.takeSnapshot();
+              final imageBytes = await _mapController?.takeSnapshot();
               setState(() {
                 _imageBytes = imageBytes;
               });
@@ -68,7 +66,6 @@ class _SnapshotBodyState extends State<_SnapshotBody> {
     );
   }
 
-  // ignore: use_setters_to_change_properties
   void onMapCreated(GoogleMapController controller) {
     _mapController = controller;
   }

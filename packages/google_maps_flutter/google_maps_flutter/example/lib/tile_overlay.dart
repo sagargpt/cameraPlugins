@@ -13,8 +13,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'page.dart';
 
 class TileOverlayPage extends GoogleMapExampleAppPage {
-  const TileOverlayPage({Key? key})
-      : super(const Icon(Icons.map), 'Tile overlay', key: key);
+  TileOverlayPage() : super(const Icon(Icons.map), 'Tile overlay');
 
   @override
   Widget build(BuildContext context) {
@@ -23,7 +22,7 @@ class TileOverlayPage extends GoogleMapExampleAppPage {
 }
 
 class TileOverlayBody extends StatefulWidget {
-  const TileOverlayBody({Key? key}) : super(key: key);
+  const TileOverlayBody();
 
   @override
   State<StatefulWidget> createState() => TileOverlayBodyState();
@@ -35,7 +34,6 @@ class TileOverlayBodyState extends State<TileOverlayBody> {
   GoogleMapController? controller;
   TileOverlay? _tileOverlay;
 
-  // ignore: use_setters_to_change_properties
   void _onMapCreated(GoogleMapController controller) {
     this.controller = controller;
   }
@@ -53,7 +51,7 @@ class TileOverlayBodyState extends State<TileOverlayBody> {
 
   void _addTileOverlay() {
     final TileOverlay tileOverlay = TileOverlay(
-      tileOverlayId: const TileOverlayId('tile_overlay_1'),
+      tileOverlayId: TileOverlayId('tile_overlay_1'),
       tileProvider: _DebugTileProvider(),
     );
     setState(() {
@@ -69,7 +67,7 @@ class TileOverlayBodyState extends State<TileOverlayBody> {
 
   @override
   Widget build(BuildContext context) {
-    final Set<TileOverlay> overlays = <TileOverlay>{
+    Set<TileOverlay> overlays = <TileOverlay>{
       if (_tileOverlay != null) _tileOverlay!,
     };
     return Column(
@@ -92,16 +90,16 @@ class TileOverlayBodyState extends State<TileOverlayBody> {
           ),
         ),
         TextButton(
-          onPressed: _addTileOverlay,
           child: const Text('Add tile overlay'),
+          onPressed: _addTileOverlay,
         ),
         TextButton(
-          onPressed: _removeTileOverlay,
           child: const Text('Remove tile overlay'),
+          onPressed: _removeTileOverlay,
         ),
         TextButton(
-          onPressed: _clearTileCache,
           child: const Text('Clear tile cache'),
+          onPressed: _clearTileCache,
         ),
       ],
     );
@@ -119,7 +117,7 @@ class _DebugTileProvider implements TileProvider {
   static const int width = 100;
   static const int height = 100;
   static final Paint boxPaint = Paint();
-  static const TextStyle textStyle = TextStyle(
+  static final TextStyle textStyle = TextStyle(
     color: Colors.red,
     fontSize: 20,
   );
@@ -137,9 +135,11 @@ class _DebugTileProvider implements TileProvider {
       textDirection: TextDirection.ltr,
     );
     textPainter.layout(
+      minWidth: 0.0,
       maxWidth: width.toDouble(),
     );
-    textPainter.paint(canvas, Offset.zero);
+    final Offset offset = const Offset(0, 0);
+    textPainter.paint(canvas, offset);
     canvas.drawRect(
         Rect.fromLTRB(0, 0, width.toDouble(), width.toDouble()), boxPaint);
     final ui.Picture picture = recorder.endRecording();

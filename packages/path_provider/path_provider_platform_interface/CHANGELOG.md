@@ -1,17 +1,3 @@
-## NEXT
-
-* Updates minimum Flutter version to 3.0.
-
-## 2.0.5
-
-* Updates imports for `prefer_relative_imports`.
-* Updates minimum Flutter version to 2.10.
-
-## 2.0.4
-
-* Minor fixes for new analysis options.
-* Removes unnecessary imports.
-
 ## 2.0.3
 
 * Removes dependency on `meta`.

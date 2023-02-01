@@ -1,47 +1,37 @@
 // Copyright 2013 The Flutter Authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
-import 'package:flutter/foundation.dart' show immutable;
 
-/// A set of allowed XTypes.
-@immutable
+/// A set of allowed XTypes
 class XTypeGroup {
   /// Creates a new group with the given label and file extensions.
   ///
   /// A group with none of the type options provided indicates that any type is
   /// allowed.
-  const XTypeGroup({
+  XTypeGroup({
     this.label,
     List<String>? extensions,
     this.mimeTypes,
-    List<String>? macUTIs,
-    List<String>? uniformTypeIdentifiers,
+    this.macUTIs,
     this.webWildCards,
-  })  : _extensions = extensions,
-        assert(uniformTypeIdentifiers == null || macUTIs == null,
-            'Only one of uniformTypeIdentifiers or macUTIs can be non-null'),
-        uniformTypeIdentifiers = uniformTypeIdentifiers ?? macUTIs;
+  }) : extensions = _removeLeadingDots(extensions);
 
-  /// The 'name' or reference to this group of types.
+  /// The 'name' or reference to this group of types
   final String? label;
 
-  /// The MIME types for this group.
+  /// The extensions for this group
+  final List<String>? extensions;
+
+  /// The MIME types for this group
   final List<String>? mimeTypes;
 
-  /// The uniform type identifiers for this group
-  final List<String>? uniformTypeIdentifiers;
+  /// The UTIs for this group
+  final List<String>? macUTIs;
 
-  /// The web wild cards for this group (ex: image/*, video/*).
+  /// The web wild cards for this group (ex: image/*, video/*)
   final List<String>? webWildCards;
 
-  final List<String>? _extensions;
-
-  /// The extensions for this group.
-  List<String>? get extensions {
-    return _removeLeadingDots(_extensions);
-  }
-
-  /// Converts this object into a JSON formatted object.
+  /// Converts this object into a JSON formatted object
   Map<String, dynamic> toJSON() {
     return <String, dynamic>{
       'label': label,
@@ -51,17 +41,6 @@ class XTypeGroup {
       'webWildCards': webWildCards,
     };
   }
-
-  /// True if this type group should allow any file.
-  bool get allowsAny {
-    return (extensions?.isEmpty ?? true) &&
-        (mimeTypes?.isEmpty ?? true) &&
-        (macUTIs?.isEmpty ?? true) &&
-        (webWildCards?.isEmpty ?? true);
-  }
-
-  /// Returns the list of uniform type identifiers for this group
-  List<String>? get macUTIs => uniformTypeIdentifiers;
 
   static List<String>? _removeLeadingDots(List<String>? exts) => exts
       ?.map((String ext) => ext.startsWith('.') ? ext.substring(1) : ext)

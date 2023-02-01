@@ -20,13 +20,10 @@ class MapsObjectId<T> {
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (other.runtimeType != runtimeType) {
-      return false;
-    }
-    return other is MapsObjectId<T> && value == other.value;
+    if (identical(this, other)) return true;
+    if (other.runtimeType != runtimeType) return false;
+    final MapsObjectId<T> typedOther = other as MapsObjectId<T>;
+    return value == typedOther.value;
   }
 
   @override

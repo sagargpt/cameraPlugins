@@ -10,6 +10,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart'
     show GoogleMap, GoogleMapController;
@@ -17,20 +18,20 @@ import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platf
 import 'package:integration_test/integration_test.dart';
 
 // This value is used when comparing long~num, like LatLng values.
-const double _acceptableLatLngDelta = 0.0000000001;
+const _acceptableLatLngDelta = 0.0000000001;
 
 // This value is used when comparing pixel measurements, mostly to gloss over
 // browser rounding errors.
-const int _acceptablePixelDelta = 1;
+const _acceptablePixelDelta = 1;
 
 /// Test Google Map Controller
 void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('Methods that require a proper Projection', () {
-    const LatLng center = LatLng(43.3078, -5.6958);
-    const Size size = Size(320, 240);
-    const CameraPosition initialCamera = CameraPosition(
+    final LatLng center = LatLng(43.3078, -5.6958);
+    final Size size = Size(320, 240);
+    final CameraPosition initialCamera = CameraPosition(
       target: center,
       zoom: 14,
     );
@@ -48,7 +49,7 @@ void main() {
     group('getScreenCoordinate', () {
       testWidgets('target of map is in center of widget',
           (WidgetTester tester) async {
-        await pumpCenteredMap(
+        pumpCenteredMap(
           tester,
           initialCamera: initialCamera,
           size: size,
@@ -72,7 +73,7 @@ void main() {
 
       testWidgets('NorthWest of visible region corresponds to x:0, y:0',
           (WidgetTester tester) async {
-        await pumpCenteredMap(
+        pumpCenteredMap(
           tester,
           initialCamera: initialCamera,
           size: size,
@@ -96,7 +97,7 @@ void main() {
       testWidgets(
           'SouthEast of visible region corresponds to x:size.width, y:size.height',
           (WidgetTester tester) async {
-        await pumpCenteredMap(
+        pumpCenteredMap(
           tester,
           initialCamera: initialCamera,
           size: size,
@@ -121,7 +122,7 @@ void main() {
     group('getLatLng', () {
       testWidgets('Center of widget is the target of map',
           (WidgetTester tester) async {
-        await pumpCenteredMap(
+        pumpCenteredMap(
           tester,
           initialCamera: initialCamera,
           size: size,
@@ -146,7 +147,7 @@ void main() {
 
       testWidgets('Top-left of widget is NorthWest bound of map',
           (WidgetTester tester) async {
-        await pumpCenteredMap(
+        pumpCenteredMap(
           tester,
           initialCamera: initialCamera,
           size: size,
@@ -161,7 +162,7 @@ void main() {
         );
 
         final LatLng coords = await controller.getLatLng(
-          const ScreenCoordinate(x: 0, y: 0),
+          ScreenCoordinate(x: 0, y: 0),
         );
 
         expect(
@@ -176,7 +177,7 @@ void main() {
 
       testWidgets('Bottom-right of widget is SouthWest bound of map',
           (WidgetTester tester) async {
-        await pumpCenteredMap(
+        pumpCenteredMap(
           tester,
           initialCamera: initialCamera,
           size: size,
@@ -208,16 +209,16 @@ void main() {
 }
 
 // Pumps a CenteredMap Widget into a given tester, with some parameters
-Future<void> pumpCenteredMap(
+void pumpCenteredMap(
   WidgetTester tester, {
   required CameraPosition initialCamera,
-  Size? size,
+  Size size = const Size(320, 240),
   void Function(GoogleMapController)? onMapCreated,
 }) async {
   await tester.pumpWidget(
     CenteredMap(
       initialCamera: initialCamera,
-      size: size ?? const Size(320, 240),
+      size: size,
       onMapCreated: onMapCreated,
     ),
   );

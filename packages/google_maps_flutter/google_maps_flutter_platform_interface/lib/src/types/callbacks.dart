@@ -10,10 +10,10 @@ import 'types.dart';
 /// registers a camera movement.
 ///
 /// This is used in [GoogleMap.onCameraMove].
-typedef CameraPositionCallback = void Function(CameraPosition position);
+typedef void CameraPositionCallback(CameraPosition position);
 
 /// Callback function taking a single argument.
-typedef ArgumentCallback<T> = void Function(T argument);
+typedef void ArgumentCallback<T>(T argument);
 
 /// Mutable collection of [ArgumentCallback] instances, itself an [ArgumentCallback].
 ///
@@ -35,7 +35,7 @@ class ArgumentCallbacks<T> {
     if (length == 1) {
       _callbacks[0].call(argument);
     } else if (0 < length) {
-      for (final ArgumentCallback<T> callback
+      for (ArgumentCallback<T> callback
           in List<ArgumentCallback<T>>.from(_callbacks)) {
         callback(argument);
       }

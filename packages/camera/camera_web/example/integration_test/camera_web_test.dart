@@ -4,8 +4,6 @@
 
 import 'dart:async';
 import 'dart:html';
-// TODO(a14n): remove this import once Flutter 3.1 or later reaches stable (including flutter/flutter#106316)
-// ignore: unnecessary_import
 import 'dart:ui';
 
 import 'package:async/async.dart';
@@ -26,7 +24,7 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   group('CameraPlugin', () {
-    const int cameraId = 1;
+    const int cameraId = 0;
 
     late Window window;
     late Navigator navigator;
@@ -78,9 +76,9 @@ void main() {
     });
 
     setUpAll(() {
-      registerFallbackValue(MockMediaStreamTrack());
-      registerFallbackValue(MockCameraOptions());
-      registerFallbackValue(FlashMode.off);
+      registerFallbackValue<MediaStreamTrack>(MockMediaStreamTrack());
+      registerFallbackValue<CameraOptions>(MockCameraOptions());
+      registerFallbackValue<FlashMode>(FlashMode.off);
     });
 
     testWidgets('CameraPlugin is the live instance',
@@ -500,7 +498,7 @@ void main() {
               isA<CameraException>().having(
                 (CameraException e) => e.code,
                 'code',
-                exception.code,
+                exception.code.toString(),
               ),
             ),
           );
@@ -593,7 +591,7 @@ void main() {
               (Camera camera) => camera.options,
               'options',
               CameraOptions(
-                audio: const AudioConstraints(),
+                audio: const AudioConstraints(enabled: false),
                 video: VideoConstraints(
                   facingMode: FacingModeConstraint(CameraType.user),
                   width: VideoSizeConstraint(
@@ -761,7 +759,7 @@ void main() {
               isA<PlatformException>().having(
                 (PlatformException e) => e.code,
                 'code',
-                exception.name,
+                exception.name.toString(),
               ),
             ),
           );
@@ -1188,33 +1186,6 @@ void main() {
             ),
           );
         });
-      });
-    });
-
-    group('startVideoCapturing', () {
-      late Camera camera;
-
-      setUp(() {
-        camera = MockCamera();
-
-        when(camera.startVideoRecording).thenAnswer((Invocation _) async {});
-
-        when(() => camera.onVideoRecordingError)
-            .thenAnswer((Invocation _) => const Stream<ErrorEvent>.empty());
-      });
-
-      testWidgets('fails if trying to stream', (WidgetTester tester) async {
-        // Save the camera in the camera plugin.
-        (CameraPlatform.instance as CameraPlugin).cameras[cameraId] = camera;
-
-        expect(
-          () => CameraPlatform.instance.startVideoCapturing(VideoCaptureOptions(
-              cameraId,
-              streamCallback: (CameraImageData imageData) {})),
-          throwsA(
-            isA<UnimplementedError>(),
-          ),
-        );
       });
     });
 
@@ -1691,7 +1662,7 @@ void main() {
             'with notFound error '
             'if the camera does not exist', (WidgetTester tester) async {
           expect(
-            () async => CameraPlatform.instance.getMaxZoomLevel(
+            () async => await CameraPlatform.instance.getMaxZoomLevel(
               cameraId,
             ),
             throwsA(
@@ -1716,7 +1687,7 @@ void main() {
           (CameraPlatform.instance as CameraPlugin).cameras[cameraId] = camera;
 
           expect(
-            () async => CameraPlatform.instance.getMaxZoomLevel(
+            () async => await CameraPlatform.instance.getMaxZoomLevel(
               cameraId,
             ),
             throwsA(
@@ -1744,7 +1715,7 @@ void main() {
           (CameraPlatform.instance as CameraPlugin).cameras[cameraId] = camera;
 
           expect(
-            () async => CameraPlatform.instance.getMaxZoomLevel(
+            () async => await CameraPlatform.instance.getMaxZoomLevel(
               cameraId,
             ),
             throwsA(
@@ -1785,7 +1756,7 @@ void main() {
             'with notFound error '
             'if the camera does not exist', (WidgetTester tester) async {
           expect(
-            () async => CameraPlatform.instance.getMinZoomLevel(
+            () async => await CameraPlatform.instance.getMinZoomLevel(
               cameraId,
             ),
             throwsA(
@@ -1810,7 +1781,7 @@ void main() {
           (CameraPlatform.instance as CameraPlugin).cameras[cameraId] = camera;
 
           expect(
-            () async => CameraPlatform.instance.getMinZoomLevel(
+            () async => await CameraPlatform.instance.getMinZoomLevel(
               cameraId,
             ),
             throwsA(
@@ -1838,7 +1809,7 @@ void main() {
           (CameraPlatform.instance as CameraPlugin).cameras[cameraId] = camera;
 
           expect(
-            () async => CameraPlatform.instance.getMinZoomLevel(
+            () async => await CameraPlatform.instance.getMinZoomLevel(
               cameraId,
             ),
             throwsA(
@@ -1873,7 +1844,7 @@ void main() {
             'with notFound error '
             'if the camera does not exist', (WidgetTester tester) async {
           expect(
-            () async => CameraPlatform.instance.setZoomLevel(
+            () async => await CameraPlatform.instance.setZoomLevel(
               cameraId,
               100.0,
             ),
@@ -1899,7 +1870,7 @@ void main() {
           (CameraPlatform.instance as CameraPlugin).cameras[cameraId] = camera;
 
           expect(
-            () async => CameraPlatform.instance.setZoomLevel(
+            () async => await CameraPlatform.instance.setZoomLevel(
               cameraId,
               100.0,
             ),
@@ -1927,7 +1898,7 @@ void main() {
           (CameraPlatform.instance as CameraPlugin).cameras[cameraId] = camera;
 
           expect(
-            () async => CameraPlatform.instance.setZoomLevel(
+            () async => await CameraPlatform.instance.setZoomLevel(
               cameraId,
               100.0,
             ),
@@ -1956,7 +1927,7 @@ void main() {
           (CameraPlatform.instance as CameraPlugin).cameras[cameraId] = camera;
 
           expect(
-            () async => CameraPlatform.instance.setZoomLevel(
+            () async => await CameraPlatform.instance.setZoomLevel(
               cameraId,
               100.0,
             ),
@@ -1989,7 +1960,7 @@ void main() {
             'with notFound error '
             'if the camera does not exist', (WidgetTester tester) async {
           expect(
-            () async => CameraPlatform.instance.pausePreview(cameraId),
+            () async => await CameraPlatform.instance.pausePreview(cameraId),
             throwsA(
               isA<PlatformException>().having(
                 (PlatformException e) => e.code,
@@ -2012,7 +1983,7 @@ void main() {
           (CameraPlatform.instance as CameraPlugin).cameras[cameraId] = camera;
 
           expect(
-            () async => CameraPlatform.instance.pausePreview(cameraId),
+            () async => await CameraPlatform.instance.pausePreview(cameraId),
             throwsA(
               isA<PlatformException>().having(
                 (PlatformException e) => e.code,
@@ -2044,7 +2015,7 @@ void main() {
             'with notFound error '
             'if the camera does not exist', (WidgetTester tester) async {
           expect(
-            () async => CameraPlatform.instance.resumePreview(cameraId),
+            () async => await CameraPlatform.instance.resumePreview(cameraId),
             throwsA(
               isA<PlatformException>().having(
                 (PlatformException e) => e.code,
@@ -2067,7 +2038,7 @@ void main() {
           (CameraPlatform.instance as CameraPlugin).cameras[cameraId] = camera;
 
           expect(
-            () async => CameraPlatform.instance.resumePreview(cameraId),
+            () async => await CameraPlatform.instance.resumePreview(cameraId),
             throwsA(
               isA<PlatformException>().having(
                 (PlatformException e) => e.code,
@@ -2093,7 +2064,7 @@ void main() {
           (CameraPlatform.instance as CameraPlugin).cameras[cameraId] = camera;
 
           expect(
-            () async => CameraPlatform.instance.resumePreview(cameraId),
+            () async => await CameraPlatform.instance.resumePreview(cameraId),
             throwsA(
               isA<PlatformException>().having(
                 (PlatformException e) => e.code,
@@ -2524,7 +2495,7 @@ void main() {
             equals(
               CameraErrorEvent(
                 cameraId,
-                "Error code: ${CameraErrorCode.abort}, error message: The video element's source has not fully loaded.",
+                'Error code: ${CameraErrorCode.abort}, error message: The video element\'s source has not fully loaded.',
               ),
             ),
           );
@@ -2550,7 +2521,7 @@ void main() {
               StreamQueue<CameraErrorEvent>(eventStream);
 
           expect(
-            () async => CameraPlatform.instance.takePicture(cameraId),
+            () async => await CameraPlatform.instance.takePicture(cameraId),
             throwsA(
               isA<PlatformException>(),
             ),
@@ -2587,7 +2558,7 @@ void main() {
               StreamQueue<CameraErrorEvent>(eventStream);
 
           expect(
-            () async => CameraPlatform.instance.setFlashMode(
+            () async => await CameraPlatform.instance.setFlashMode(
               cameraId,
               FlashMode.always,
             ),
@@ -2627,7 +2598,7 @@ void main() {
               StreamQueue<CameraErrorEvent>(eventStream);
 
           expect(
-            () async => CameraPlatform.instance.getMaxZoomLevel(
+            () async => await CameraPlatform.instance.getMaxZoomLevel(
               cameraId,
             ),
             throwsA(
@@ -2666,7 +2637,7 @@ void main() {
               StreamQueue<CameraErrorEvent>(eventStream);
 
           expect(
-            () async => CameraPlatform.instance.getMinZoomLevel(
+            () async => await CameraPlatform.instance.getMinZoomLevel(
               cameraId,
             ),
             throwsA(
@@ -2705,7 +2676,7 @@ void main() {
               StreamQueue<CameraErrorEvent>(eventStream);
 
           expect(
-            () async => CameraPlatform.instance.setZoomLevel(
+            () async => await CameraPlatform.instance.setZoomLevel(
               cameraId,
               100.0,
             ),
@@ -2745,7 +2716,7 @@ void main() {
               StreamQueue<CameraErrorEvent>(eventStream);
 
           expect(
-            () async => CameraPlatform.instance.resumePreview(cameraId),
+            () async => await CameraPlatform.instance.resumePreview(cameraId),
             throwsA(
               isA<PlatformException>(),
             ),
@@ -2789,7 +2760,8 @@ void main() {
               StreamQueue<CameraErrorEvent>(eventStream);
 
           expect(
-            () async => CameraPlatform.instance.startVideoRecording(cameraId),
+            () async =>
+                await CameraPlatform.instance.startVideoRecording(cameraId),
             throwsA(
               isA<PlatformException>(),
             ),
@@ -2856,7 +2828,8 @@ void main() {
               StreamQueue<CameraErrorEvent>(eventStream);
 
           expect(
-            () async => CameraPlatform.instance.stopVideoRecording(cameraId),
+            () async =>
+                await CameraPlatform.instance.stopVideoRecording(cameraId),
             throwsA(
               isA<PlatformException>(),
             ),
@@ -2893,7 +2866,8 @@ void main() {
               StreamQueue<CameraErrorEvent>(eventStream);
 
           expect(
-            () async => CameraPlatform.instance.pauseVideoRecording(cameraId),
+            () async =>
+                await CameraPlatform.instance.pauseVideoRecording(cameraId),
             throwsA(
               isA<PlatformException>(),
             ),
@@ -2930,7 +2904,8 @@ void main() {
               StreamQueue<CameraErrorEvent>(eventStream);
 
           expect(
-            () async => CameraPlatform.instance.resumeVideoRecording(cameraId),
+            () async =>
+                await CameraPlatform.instance.resumeVideoRecording(cameraId),
             throwsA(
               isA<PlatformException>(),
             ),

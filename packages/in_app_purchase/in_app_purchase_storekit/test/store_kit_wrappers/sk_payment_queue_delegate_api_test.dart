@@ -20,8 +20,8 @@ void main() {
   test(
       'handlePaymentQueueDelegateCallbacks should call SKPaymentQueueDelegateWrapper.shouldContinueTransaction',
       () async {
-    final SKPaymentQueueWrapper queue = SKPaymentQueueWrapper();
-    final TestPaymentQueueDelegate testDelegate = TestPaymentQueueDelegate();
+    SKPaymentQueueWrapper queue = SKPaymentQueueWrapper();
+    TestPaymentQueueDelegate testDelegate = TestPaymentQueueDelegate();
     await queue.setDelegate(testDelegate);
 
     final Map<String, dynamic> arguments = <String, dynamic>{
@@ -36,7 +36,7 @@ void main() {
       },
     };
 
-    final Object? result = await queue.handlePaymentQueueDelegateCallbacks(
+    final result = await queue.handlePaymentQueueDelegateCallbacks(
       MethodCall('shouldContinueTransaction', arguments),
     );
 
@@ -52,13 +52,13 @@ void main() {
   test(
       'handlePaymentQueueDelegateCallbacks should call SKPaymentQueueDelegateWrapper.shouldShowPriceConsent',
       () async {
-    final SKPaymentQueueWrapper queue = SKPaymentQueueWrapper();
-    final TestPaymentQueueDelegate testDelegate = TestPaymentQueueDelegate();
+    SKPaymentQueueWrapper queue = SKPaymentQueueWrapper();
+    TestPaymentQueueDelegate testDelegate = TestPaymentQueueDelegate();
     await queue.setDelegate(testDelegate);
 
-    final bool result = (await queue.handlePaymentQueueDelegateCallbacks(
-      const MethodCall('shouldShowPriceConsent'),
-    ))! as bool;
+    final result = await queue.handlePaymentQueueDelegateCallbacks(
+      MethodCall('shouldShowPriceConsent'),
+    );
 
     expect(result, false);
     expect(
@@ -72,12 +72,12 @@ void main() {
   test(
       'handleObserverCallbacks should call SKTransactionObserverWrapper.restoreCompletedTransactionsFailed',
       () async {
-    final SKPaymentQueueWrapper queue = SKPaymentQueueWrapper();
-    final TestTransactionObserverWrapper testObserver =
+    SKPaymentQueueWrapper queue = SKPaymentQueueWrapper();
+    TestTransactionObserverWrapper testObserver =
         TestTransactionObserverWrapper();
     queue.setTransactionObserver(testObserver);
 
-    final Map<dynamic, dynamic> arguments = <dynamic, dynamic>{
+    final arguments = <dynamic, dynamic>{
       'code': 100,
       'domain': 'domain',
       'userInfo': <String, dynamic>{'error': 'underlying_error'},
@@ -163,6 +163,6 @@ class FakeStoreKitPlatform {
         isPaymentQueueDelegateRegistered = false;
         return Future<void>.sync(() {});
     }
-    return Future<dynamic>.error('method not mocked');
+    return Future.error('method not mocked');
   }
 }

@@ -30,14 +30,21 @@ public class JavaScriptChannelFlutterApiImpl extends JavaScriptChannelFlutterApi
   /** Passes arguments from {@link JavaScriptChannel#postMessage} to Dart. */
   public void postMessage(
       JavaScriptChannel javaScriptChannel, String messageArg, Reply<Void> callback) {
-    super.postMessage(getIdentifierForJavaScriptChannel(javaScriptChannel), messageArg, callback);
+    super.postMessage(instanceManager.getInstanceId(javaScriptChannel), messageArg, callback);
   }
 
-  private long getIdentifierForJavaScriptChannel(JavaScriptChannel javaScriptChannel) {
-    final Long identifier = instanceManager.getIdentifierForStrongReference(javaScriptChannel);
-    if (identifier == null) {
-      throw new IllegalStateException("Could not find identifier for JavaScriptChannel.");
+  /**
+   * Communicates to Dart that the reference to a {@link JavaScriptChannel} was removed.
+   *
+   * @param javaScriptChannel The instance whose reference will be removed.
+   * @param callback Reply callback with return value from Dart.
+   */
+  public void dispose(JavaScriptChannel javaScriptChannel, Reply<Void> callback) {
+    final Long instanceId = instanceManager.removeInstance(javaScriptChannel);
+    if (instanceId != null) {
+      dispose(instanceId, callback);
+    } else {
+      callback.reply(null);
     }
-    return identifier;
   }
 }

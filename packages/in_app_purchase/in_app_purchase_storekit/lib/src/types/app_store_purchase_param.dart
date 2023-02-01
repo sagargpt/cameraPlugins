@@ -12,9 +12,7 @@ class AppStorePurchaseParam extends PurchaseParam {
   AppStorePurchaseParam({
     required ProductDetails productDetails,
     String? applicationUserName,
-    this.quantity = 1,
     this.simulatesAskToBuyInSandbox = false,
-    this.discount,
   }) : super(
           productDetails: productDetails,
           applicationUserName: applicationUserName,
@@ -30,10 +28,4 @@ class AppStorePurchaseParam extends PurchaseParam {
   ///
   /// See also [SKPaymentWrapper.simulatesAskToBuyInSandbox].
   final bool simulatesAskToBuyInSandbox;
-
-  /// Quantity of the product user requested to buy.
-  final int quantity;
-
-  /// Discount applied to the product. The value is `null` when the product does not have a discount.
-  final SKPaymentDiscountWrapper? discount;
 }

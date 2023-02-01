@@ -5,12 +5,11 @@
 import 'dart:async';
 import 'package:flutter/services.dart';
 
-typedef AdditionalSteps = void Function(dynamic args);
+typedef void AdditionalSteps(dynamic args);
 
 class StubInAppPurchasePlatform {
-  final Map<String, dynamic> _expectedCalls = <String, dynamic>{};
-  final Map<String, AdditionalSteps?> _additionalSteps =
-      <String, AdditionalSteps?>{};
+  Map<String, dynamic> _expectedCalls = <String, dynamic>{};
+  Map<String, AdditionalSteps?> _additionalSteps = <String, AdditionalSteps?>{};
   void addResponse(
       {required String name,
       dynamic value,
@@ -19,7 +18,7 @@ class StubInAppPurchasePlatform {
     _expectedCalls[name] = value;
   }
 
-  final List<MethodCall> _previousCalls = <MethodCall>[];
+  List<MethodCall> _previousCalls = <MethodCall>[];
   List<MethodCall> get previousCalls => _previousCalls;
   MethodCall previousCallMatching(String name) =>
       _previousCalls.firstWhere((MethodCall call) => call.method == name);

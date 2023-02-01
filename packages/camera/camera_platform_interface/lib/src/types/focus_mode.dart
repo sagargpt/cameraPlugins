@@ -18,6 +18,8 @@ String serializeFocusMode(FocusMode focusMode) {
       return 'locked';
     case FocusMode.auto:
       return 'auto';
+    default:
+      throw ArgumentError('Unknown FocusMode value');
   }
 }
 

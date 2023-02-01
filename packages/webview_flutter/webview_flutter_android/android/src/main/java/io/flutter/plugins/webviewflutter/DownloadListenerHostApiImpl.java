@@ -6,6 +6,7 @@ package io.flutter.plugins.webviewflutter;
 
 import android.webkit.DownloadListener;
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import io.flutter.plugins.webviewflutter.GeneratedAndroidWebView.DownloadListenerHostApi;
 
 /**
@@ -20,9 +21,11 @@ public class DownloadListenerHostApiImpl implements DownloadListenerHostApi {
 
   /**
    * Implementation of {@link DownloadListener} that passes arguments of callback methods to Dart.
+   *
+   * <p>No messages are sent to Dart after {@link DownloadListenerImpl#release} is called.
    */
-  public static class DownloadListenerImpl implements DownloadListener {
-    private final DownloadListenerFlutterApiImpl flutterApi;
+  public static class DownloadListenerImpl implements DownloadListener, Releasable {
+    @Nullable private DownloadListenerFlutterApiImpl flutterApi;
 
     /**
      * Creates a {@link DownloadListenerImpl} that passes arguments of callbacks methods to Dart.
@@ -40,8 +43,18 @@ public class DownloadListenerHostApiImpl implements DownloadListenerHostApi {
         String contentDisposition,
         String mimetype,
         long contentLength) {
-      flutterApi.onDownloadStart(
-          this, url, userAgent, contentDisposition, mimetype, contentLength, reply -> {});
+      if (flutterApi != null) {
+        flutterApi.onDownloadStart(
+            this, url, userAgent, contentDisposition, mimetype, contentLength, reply -> {});
+      }
+    }
+
+    @Override
+    public void release() {
+      if (flutterApi != null) {
+        flutterApi.dispose(this, reply -> {});
+      }
+      flutterApi = null;
     }
   }
 
@@ -78,6 +91,6 @@ public class DownloadListenerHostApiImpl implements DownloadListenerHostApi {
   public void create(Long instanceId) {
     final DownloadListener downloadListener =
         downloadListenerCreator.createDownloadListener(flutterApi);
-    instanceManager.addDartCreatedInstance(downloadListener, instanceId);
+    instanceManager.addInstance(downloadListener, instanceId);
   }
 }

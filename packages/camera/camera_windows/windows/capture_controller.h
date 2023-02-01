@@ -75,9 +75,6 @@ class CaptureController {
 
   // Initializes the capture controller with the specified device id.
   //
-  // Returns false if the capture controller could not be initialized
-  // or is already initialized.
-  //
   // texture_registrar: Pointer to Flutter TextureRegistrar instance. Used to
   //                    register texture for capture preview.
   // device_id:         A string that holds information of camera device id to
@@ -85,7 +82,7 @@ class CaptureController {
   // record_audio:      A boolean value telling if audio should be captured on
   //                    video recording.
   // resolution_preset: Maximum capture resolution height.
-  virtual bool InitCaptureDevice(TextureRegistrar* texture_registrar,
+  virtual void InitCaptureDevice(TextureRegistrar* texture_registrar,
                                  const std::string& device_id,
                                  bool record_audio,
                                  ResolutionPreset resolution_preset) = 0;
@@ -135,7 +132,7 @@ class CaptureControllerImpl : public CaptureController,
   CaptureControllerImpl& operator=(const CaptureControllerImpl&) = delete;
 
   // CaptureController
-  bool InitCaptureDevice(TextureRegistrar* texture_registrar,
+  void InitCaptureDevice(TextureRegistrar* texture_registrar,
                          const std::string& device_id, bool record_audio,
                          ResolutionPreset resolution_preset) override;
   uint32_t GetPreviewWidth() const override { return preview_frame_width_; }
@@ -207,29 +204,28 @@ class CaptureControllerImpl : public CaptureController,
   void StopTimedRecord();
 
   // Stops preview. Called internally on camera reset and dispose.
-  HRESULT StopPreview();
+  void StopPreview();
 
   // Handles capture engine initalization event.
-  void OnCaptureEngineInitialized(CameraResult result,
-                                  const std::string& error);
+  void OnCaptureEngineInitialized(bool success, const std::string& error);
 
   // Handles capture engine errors.
-  void OnCaptureEngineError(CameraResult result, const std::string& error);
+  void OnCaptureEngineError(HRESULT hr, const std::string& error);
 
   // Handles picture events.
-  void OnPicture(CameraResult result, const std::string& error);
+  void OnPicture(bool success, const std::string& error);
 
   // Handles preview started events.
-  void OnPreviewStarted(CameraResult result, const std::string& error);
+  void OnPreviewStarted(bool success, const std::string& error);
 
   // Handles preview stopped events.
-  void OnPreviewStopped(CameraResult result, const std::string& error);
+  void OnPreviewStopped(bool success, const std::string& error);
 
   // Handles record started events.
-  void OnRecordStarted(CameraResult result, const std::string& error);
+  void OnRecordStarted(bool success, const std::string& error);
 
   // Handles record stopped events.
-  void OnRecordStopped(CameraResult result, const std::string& error);
+  void OnRecordStopped(bool success, const std::string& error);
 
   bool media_foundation_started_ = false;
   bool record_audio_ = false;

@@ -2,7 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:flutter/foundation.dart' show immutable, objectRuntimeType;
+import 'dart:ui' show hashValues;
+
+import 'package:flutter/foundation.dart' show immutable;
 
 /// Represents a point coordinate in the [GoogleMap]'s view.
 ///
@@ -26,19 +28,19 @@ class ScreenCoordinate {
   /// Converts this object to something serializable in JSON.
   Object toJson() {
     return <String, int>{
-      'x': x,
-      'y': y,
+      "x": x,
+      "y": y,
     };
   }
 
   @override
-  String toString() => '${objectRuntimeType(this, 'ScreenCoordinate')}($x, $y)';
+  String toString() => '$runtimeType($x, $y)';
 
   @override
-  bool operator ==(Object other) {
-    return other is ScreenCoordinate && other.x == x && other.y == y;
+  bool operator ==(Object o) {
+    return o is ScreenCoordinate && o.x == x && o.y == y;
   }
 
   @override
-  int get hashCode => Object.hash(x, y);
+  int get hashCode => hashValues(x, y);
 }

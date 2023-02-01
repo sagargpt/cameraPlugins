@@ -6,8 +6,8 @@
 
 import 'dart:async';
 import 'dart:math';
-import 'dart:typed_data';
 import 'dart:ui';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -15,8 +15,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'page.dart';
 
 class PlaceMarkerPage extends GoogleMapExampleAppPage {
-  const PlaceMarkerPage({Key? key})
-      : super(const Icon(Icons.place), 'Place marker', key: key);
+  PlaceMarkerPage() : super(const Icon(Icons.place), 'Place marker');
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +24,7 @@ class PlaceMarkerPage extends GoogleMapExampleAppPage {
 }
 
 class PlaceMarkerBody extends StatefulWidget {
-  const PlaceMarkerBody({Key? key}) : super(key: key);
+  const PlaceMarkerBody();
 
   @override
   State<StatefulWidget> createState() => PlaceMarkerBodyState();
@@ -35,7 +34,7 @@ typedef MarkerUpdateAction = Marker Function(Marker marker);
 
 class PlaceMarkerBodyState extends State<PlaceMarkerBody> {
   PlaceMarkerBodyState();
-  static const LatLng center = LatLng(-33.86711, 151.1947171);
+  static final LatLng center = const LatLng(-33.86711, 151.1947171);
 
   GoogleMapController? controller;
   Map<MarkerId, Marker> markers = <MarkerId, Marker>{};
@@ -43,7 +42,6 @@ class PlaceMarkerBodyState extends State<PlaceMarkerBody> {
   int _markerIdCounter = 1;
   LatLng? markerPosition;
 
-  // ignore: use_setters_to_change_properties
   void _onMapCreated(GoogleMapController controller) {
     this.controller = controller;
   }
@@ -76,17 +74,17 @@ class PlaceMarkerBodyState extends State<PlaceMarkerBody> {
     }
   }
 
-  Future<void> _onMarkerDrag(MarkerId markerId, LatLng newPosition) async {
+  void _onMarkerDrag(MarkerId markerId, LatLng newPosition) async {
     setState(() {
-      markerPosition = newPosition;
+      this.markerPosition = newPosition;
     });
   }
 
-  Future<void> _onMarkerDragEnd(MarkerId markerId, LatLng newPosition) async {
+  void _onMarkerDragEnd(MarkerId markerId, LatLng newPosition) async {
     final Marker? tappedMarker = markers[markerId];
     if (tappedMarker != null) {
       setState(() {
-        markerPosition = null;
+        this.markerPosition = null;
       });
       await showDialog<void>(
           context: context,
@@ -208,7 +206,7 @@ class PlaceMarkerBodyState extends State<PlaceMarkerBody> {
 
   Future<void> _changeInfo(MarkerId markerId) async {
     final Marker marker = markers[markerId]!;
-    final String newSnippet = '${marker.infoWindow.snippet!}*';
+    final String newSnippet = marker.infoWindow.snippet! + '*';
     setState(() {
       markers[markerId] = marker.copyWith(
         infoWindowParam: marker.infoWindow.copyWith(
@@ -285,13 +283,13 @@ class PlaceMarkerBodyState extends State<PlaceMarkerBody> {
       bitmapIcon.complete(bitmap);
     }));
 
-    return bitmapIcon.future;
+    return await bitmapIcon.future;
   }
 
   @override
   Widget build(BuildContext context) {
     final MarkerId? selectedId = selectedMarker;
-    return Stack(children: <Widget>[
+    return Stack(children: [
       Column(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -310,13 +308,13 @@ class PlaceMarkerBodyState extends State<PlaceMarkerBody> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: <Widget>[
               TextButton(
-                onPressed: _add,
                 child: const Text('Add'),
+                onPressed: _add,
               ),
               TextButton(
+                child: const Text('Remove'),
                 onPressed:
                     selectedId == null ? null : () => _remove(selectedId),
-                child: const Text('Remove'),
               ),
             ],
           ),
@@ -324,61 +322,62 @@ class PlaceMarkerBodyState extends State<PlaceMarkerBody> {
             alignment: WrapAlignment.spaceEvenly,
             children: <Widget>[
               TextButton(
+                child: const Text('change info'),
                 onPressed:
                     selectedId == null ? null : () => _changeInfo(selectedId),
-                child: const Text('change info'),
               ),
               TextButton(
+                child: const Text('change info anchor'),
                 onPressed: selectedId == null
                     ? null
                     : () => _changeInfoAnchor(selectedId),
-                child: const Text('change info anchor'),
               ),
               TextButton(
+                child: const Text('change alpha'),
                 onPressed:
                     selectedId == null ? null : () => _changeAlpha(selectedId),
-                child: const Text('change alpha'),
               ),
               TextButton(
+                child: const Text('change anchor'),
                 onPressed:
                     selectedId == null ? null : () => _changeAnchor(selectedId),
-                child: const Text('change anchor'),
               ),
               TextButton(
+                child: const Text('toggle draggable'),
                 onPressed: selectedId == null
                     ? null
                     : () => _toggleDraggable(selectedId),
-                child: const Text('toggle draggable'),
               ),
               TextButton(
+                child: const Text('toggle flat'),
                 onPressed:
                     selectedId == null ? null : () => _toggleFlat(selectedId),
-                child: const Text('toggle flat'),
               ),
               TextButton(
+                child: const Text('change position'),
                 onPressed: selectedId == null
                     ? null
                     : () => _changePosition(selectedId),
-                child: const Text('change position'),
               ),
               TextButton(
+                child: const Text('change rotation'),
                 onPressed: selectedId == null
                     ? null
                     : () => _changeRotation(selectedId),
-                child: const Text('change rotation'),
               ),
               TextButton(
+                child: const Text('toggle visible'),
                 onPressed: selectedId == null
                     ? null
                     : () => _toggleVisible(selectedId),
-                child: const Text('toggle visible'),
               ),
               TextButton(
+                child: const Text('change zIndex'),
                 onPressed:
                     selectedId == null ? null : () => _changeZIndex(selectedId),
-                child: const Text('change zIndex'),
               ),
               TextButton(
+                child: const Text('set marker icon'),
                 onPressed: selectedId == null
                     ? null
                     : () {
@@ -388,7 +387,6 @@ class PlaceMarkerBodyState extends State<PlaceMarkerBody> {
                           },
                         );
                       },
-                child: const Text('set marker icon'),
               ),
             ],
           ),
@@ -399,18 +397,17 @@ class PlaceMarkerBodyState extends State<PlaceMarkerBody> {
         child: Container(
           color: Colors.white70,
           height: 30,
-          padding: const EdgeInsets.only(left: 12, right: 12),
+          padding: EdgeInsets.only(left: 12, right: 12),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: <Widget>[
-              if (markerPosition == null)
-                Container()
-              else
-                Expanded(child: Text('lat: ${markerPosition!.latitude}')),
-              if (markerPosition == null)
-                Container()
-              else
-                Expanded(child: Text('lng: ${markerPosition!.longitude}')),
+            mainAxisSize: MainAxisSize.max,
+            children: [
+              markerPosition == null
+                  ? Container()
+                  : Expanded(child: Text("lat: ${markerPosition!.latitude}")),
+              markerPosition == null
+                  ? Container()
+                  : Expanded(child: Text("lng: ${markerPosition!.longitude}")),
             ],
           ),
         ),

@@ -6,8 +6,7 @@ import 'dart:async';
 
 import '../channel.dart';
 
-// ignore: avoid_classes_with_only_static_members
-/// This class contains static methods to manage StoreKit receipts.
+///This class contains static methods to manage StoreKit receipts.
 class SKReceiptManager {
   /// Retrieve the receipt data from your application's main bundle.
   ///

@@ -113,31 +113,29 @@ HRESULT PreviewHandler::InitPreviewSink(
   return hr;
 }
 
-HRESULT PreviewHandler::StartPreview(IMFCaptureEngine* capture_engine,
-                                     IMFMediaType* base_media_type,
-                                     CaptureEngineListener* sample_callback) {
+bool PreviewHandler::StartPreview(IMFCaptureEngine* capture_engine,
+                                  IMFMediaType* base_media_type,
+                                  CaptureEngineListener* sample_callback) {
   assert(capture_engine);
   assert(base_media_type);
 
-  HRESULT hr =
-      InitPreviewSink(capture_engine, base_media_type, sample_callback);
-
-  if (FAILED(hr)) {
-    return hr;
+  if (FAILED(
+          InitPreviewSink(capture_engine, base_media_type, sample_callback))) {
+    return false;
   }
 
   preview_state_ = PreviewState::kStarting;
-  return capture_engine->StartPreview();
+  return SUCCEEDED(capture_engine->StartPreview());
 }
 
-HRESULT PreviewHandler::StopPreview(IMFCaptureEngine* capture_engine) {
+bool PreviewHandler::StopPreview(IMFCaptureEngine* capture_engine) {
   if (preview_state_ == PreviewState::kStarting ||
       preview_state_ == PreviewState::kRunning ||
       preview_state_ == PreviewState::kPaused) {
     preview_state_ = PreviewState::kStopping;
-    return capture_engine->StopPreview();
+    return SUCCEEDED(capture_engine->StopPreview());
   }
-  return E_FAIL;
+  return false;
 }
 
 bool PreviewHandler::PausePreview() {

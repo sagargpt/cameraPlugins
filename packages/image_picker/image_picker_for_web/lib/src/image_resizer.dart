@@ -7,9 +7,8 @@ import 'dart:html' as html;
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:image_picker_for_web/src/image_resizer_utils.dart';
 import 'package:image_picker_platform_interface/image_picker_platform_interface.dart';
-
-import 'image_resizer_utils.dart';
 
 /// Helper class that resizes images.
 class ImageResizer {
@@ -40,7 +39,6 @@ class ImageResizer {
     final Completer<html.ImageElement> imageLoadCompleter =
         Completer<html.ImageElement>();
     final html.ImageElement imageElement = html.ImageElement();
-    // ignore: unsafe_html
     imageElement.src = blobUrl;
 
     imageElement.onLoad.listen((html.Event event) {
@@ -83,7 +81,7 @@ class ImageResizer {
         await canvas.toBlob(originalFile.mimeType, calculatedImageQuality);
     return XFile(html.Url.createObjectUrlFromBlob(blob),
         mimeType: originalFile.mimeType,
-        name: 'scaled_${originalFile.name}',
+        name: 'scaled_' + originalFile.name,
         lastModified: DateTime.now(),
         length: blob.size);
   }

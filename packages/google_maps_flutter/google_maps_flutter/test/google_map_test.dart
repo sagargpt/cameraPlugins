@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
 
 import 'fake_maps_controllers.dart';
 
@@ -89,6 +90,7 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+          compassEnabled: true,
         ),
       ),
     );
@@ -117,6 +119,7 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+          mapToolbarEnabled: true,
         ),
       ),
     );
@@ -230,6 +233,7 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+          minMaxZoomPreference: MinMaxZoomPreference.unbounded,
         ),
       ),
     );
@@ -259,6 +263,7 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+          rotateGesturesEnabled: true,
         ),
       ),
     );
@@ -287,6 +292,7 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+          scrollGesturesEnabled: true,
         ),
       ),
     );
@@ -315,6 +321,7 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+          tiltGesturesEnabled: true,
         ),
       ),
     );
@@ -372,6 +379,7 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+          zoomGesturesEnabled: true,
         ),
       ),
     );
@@ -400,6 +408,7 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+          zoomControlsEnabled: true,
         ),
       ),
     );
@@ -413,6 +422,7 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+          myLocationEnabled: false,
         ),
       ),
     );
@@ -442,6 +452,7 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+          myLocationEnabled: false,
         ),
       ),
     );
@@ -526,6 +537,7 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+          trafficEnabled: false,
         ),
       ),
     );
@@ -569,10 +581,45 @@ void main() {
         textDirection: TextDirection.ltr,
         child: GoogleMap(
           initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+          buildingsEnabled: true,
         ),
       ),
     );
 
     expect(platformGoogleMap.buildingsEnabled, true);
+  });
+
+  testWidgets(
+    'Default Android widget is AndroidView',
+    (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const Directionality(
+          textDirection: TextDirection.ltr,
+          child: GoogleMap(
+            initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+          ),
+        ),
+      );
+
+      expect(find.byType(AndroidView), findsOneWidget);
+    },
+  );
+
+  testWidgets('Use PlatformViewLink on Android', (WidgetTester tester) async {
+    final MethodChannelGoogleMapsFlutter platform =
+        GoogleMapsFlutterPlatform.instance as MethodChannelGoogleMapsFlutter;
+    platform.useAndroidViewSurface = true;
+
+    await tester.pumpWidget(
+      const Directionality(
+        textDirection: TextDirection.ltr,
+        child: GoogleMap(
+          initialCameraPosition: CameraPosition(target: LatLng(10.0, 15.0)),
+        ),
+      ),
+    );
+
+    expect(find.byType(PlatformViewLink), findsOneWidget);
+    platform.useAndroidViewSurface = false;
   });
 }

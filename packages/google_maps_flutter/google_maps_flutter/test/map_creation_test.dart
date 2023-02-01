@@ -3,10 +3,10 @@
 // found in the LICENSE file.
 
 import 'dart:async';
-// TODO(a14n): remove this import once Flutter 3.1 or later reaches stable (including flutter/flutter#104231)
-// ignore: unnecessary_import
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -32,7 +32,7 @@ void main() {
       Directionality(
         textDirection: TextDirection.ltr,
         child: Column(
-          children: const <Widget>[
+          children: const [
             GoogleMap(
               initialCameraPosition: CameraPosition(
                 target: LatLng(43.362, -5.849),
@@ -57,7 +57,7 @@ void main() {
   testWidgets('Calls platform.dispose when GoogleMap is disposed of', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const GoogleMap(
+    await tester.pumpWidget(GoogleMap(
       initialCameraPosition: CameraPosition(
         target: LatLng(43.3608, -5.8702),
       ),
@@ -81,15 +81,15 @@ class TestGoogleMapsFlutterPlatform extends GoogleMapsFlutterPlatform {
   bool disposed = false;
 
   // Stream controller to inject events for testing.
-  final StreamController<MapEvent<dynamic>> mapEventStreamController =
-      StreamController<MapEvent<dynamic>>.broadcast();
+  final StreamController<MapEvent> mapEventStreamController =
+      StreamController<MapEvent>.broadcast();
 
   @override
   Future<void> init(int mapId) async {}
 
   @override
-  Future<void> updateMapConfiguration(
-    MapConfiguration update, {
+  Future<void> updateMapOptions(
+    Map<String, dynamic> optionsUpdate, {
     required int mapId,
   }) async {}
 
@@ -151,8 +151,7 @@ class TestGoogleMapsFlutterPlatform extends GoogleMapsFlutterPlatform {
   Future<LatLngBounds> getVisibleRegion({
     required int mapId,
   }) async {
-    return LatLngBounds(
-        southwest: const LatLng(0, 0), northeast: const LatLng(0, 0));
+    return LatLngBounds(southwest: LatLng(0, 0), northeast: LatLng(0, 0));
   }
 
   @override
@@ -160,7 +159,7 @@ class TestGoogleMapsFlutterPlatform extends GoogleMapsFlutterPlatform {
     LatLng latLng, {
     required int mapId,
   }) async {
-    return const ScreenCoordinate(x: 0, y: 0);
+    return ScreenCoordinate(x: 0, y: 0);
   }
 
   @override
@@ -168,7 +167,7 @@ class TestGoogleMapsFlutterPlatform extends GoogleMapsFlutterPlatform {
     ScreenCoordinate screenCoordinate, {
     required int mapId,
   }) async {
-    return const LatLng(0, 0);
+    return LatLng(0, 0);
   }
 
   @override
@@ -276,12 +275,18 @@ class TestGoogleMapsFlutterPlatform extends GoogleMapsFlutterPlatform {
   }
 
   @override
-  Widget buildViewWithConfiguration(
+  Widget buildView(
     int creationId,
     PlatformViewCreatedCallback onPlatformViewCreated, {
-    required MapWidgetConfiguration widgetConfiguration,
-    MapObjects mapObjects = const MapObjects(),
-    MapConfiguration mapConfiguration = const MapConfiguration(),
+    required CameraPosition initialCameraPosition,
+    Set<Marker> markers = const <Marker>{},
+    Set<Polygon> polygons = const <Polygon>{},
+    Set<Polyline> polylines = const <Polyline>{},
+    Set<Circle> circles = const <Circle>{},
+    Set<TileOverlay> tileOverlays = const <TileOverlay>{},
+    Set<Factory<OneSequenceGestureRecognizer>>? gestureRecognizers =
+        const <Factory<OneSequenceGestureRecognizer>>{},
+    Map<String, dynamic> mapOptions = const <String, dynamic>{},
   }) {
     onPlatformViewCreated(0);
     createdIds.add(creationId);

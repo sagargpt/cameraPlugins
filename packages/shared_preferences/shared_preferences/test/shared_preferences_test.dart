@@ -171,22 +171,22 @@ void main() {
     });
 
     group('mocking', () {
-      const String key = 'dummy';
-      const String prefixedKey = 'flutter.$key';
+      const String _key = 'dummy';
+      const String _prefixedKey = 'flutter.' + _key;
 
       test('test 1', () async {
         SharedPreferences.setMockInitialValues(
-            <String, Object>{prefixedKey: 'my string'});
+            <String, Object>{_prefixedKey: 'my string'});
         final SharedPreferences prefs = await SharedPreferences.getInstance();
-        final String? value = prefs.getString(key);
+        final String? value = prefs.getString(_key);
         expect(value, 'my string');
       });
 
       test('test 2', () async {
         SharedPreferences.setMockInitialValues(
-            <String, Object>{prefixedKey: 'my other string'});
+            <String, Object>{_prefixedKey: 'my other string'});
         final SharedPreferences prefs = await SharedPreferences.getInstance();
-        final String? value = prefs.getString(key);
+        final String? value = prefs.getString(_key);
         expect(value, 'my other string');
       });
     });

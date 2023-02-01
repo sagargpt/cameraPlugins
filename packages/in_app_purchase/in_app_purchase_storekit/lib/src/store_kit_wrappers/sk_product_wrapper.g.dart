@@ -42,9 +42,6 @@ SKProductDiscountWrapper _$SKProductDiscountWrapperFromJson(Map json) =>
           (json['subscriptionPeriod'] as Map?)?.map(
         (k, e) => MapEntry(k as String, e),
       )),
-      identifier: json['identifier'] as String? ?? null,
-      type:
-          const SKProductDiscountTypeConverter().fromJson(json['type'] as int?),
     );
 
 SKProductWrapper _$SKProductWrapperFromJson(Map json) => SKProductWrapper(

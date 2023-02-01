@@ -2,16 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'package:flutter/foundation.dart';
+import 'dart:ui' show hashValues;
+
+import 'package:flutter/rendering.dart';
 import 'package:google_maps_flutter_platform_interface/src/types/maps_object.dart';
 import 'package:google_maps_flutter_platform_interface/src/types/maps_object_updates.dart';
 
 /// A trivial TestMapsObject implementation for testing updates with.
-@immutable
-class TestMapsObject implements MapsObject<TestMapsObject> {
+class TestMapsObject implements MapsObject {
   const TestMapsObject(this.mapsId, {this.data = 1});
 
-  @override
   final MapsObjectId<TestMapsObject> mapsId;
 
   final int data;
@@ -37,7 +37,7 @@ class TestMapsObject implements MapsObject<TestMapsObject> {
   }
 
   @override
-  int get hashCode => Object.hash(mapsId, data);
+  int get hashCode => hashValues(mapsId, data);
 }
 
 class TestMapsObjectUpdate extends MapsObjectUpdates<TestMapsObject> {

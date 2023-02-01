@@ -7,15 +7,13 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import 'page.dart';
 
-const LatLng _center = LatLng(32.080664, 34.9563837);
-
 class ScrollingMapPage extends GoogleMapExampleAppPage {
-  const ScrollingMapPage({Key? key})
-      : super(const Icon(Icons.map), 'Scrolling map', key: key);
+  ScrollingMapPage() : super(const Icon(Icons.map), 'Scrolling map');
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +22,9 @@ class ScrollingMapPage extends GoogleMapExampleAppPage {
 }
 
 class ScrollingMapBody extends StatelessWidget {
-  const ScrollingMapBody({Key? key}) : super(key: key);
+  const ScrollingMapBody();
+
+  final LatLng center = const LatLng(32.080664, 34.9563837);
 
   @override
   Widget build(BuildContext context) {
@@ -44,8 +44,8 @@ class ScrollingMapBody extends StatelessWidget {
                     width: 300.0,
                     height: 300.0,
                     child: GoogleMap(
-                      initialCameraPosition: const CameraPosition(
-                        target: _center,
+                      initialCameraPosition: CameraPosition(
+                        target: center,
                         zoom: 11.0,
                       ),
                       gestureRecognizers: //
@@ -66,7 +66,7 @@ class ScrollingMapBody extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 30.0),
             child: Column(
               children: <Widget>[
-                const Text("This map doesn't consume the vertical drags."),
+                const Text('This map doesn\'t consume the vertical drags.'),
                 const Padding(
                   padding: EdgeInsets.only(bottom: 12.0),
                   child:
@@ -77,16 +77,16 @@ class ScrollingMapBody extends StatelessWidget {
                     width: 300.0,
                     height: 300.0,
                     child: GoogleMap(
-                      initialCameraPosition: const CameraPosition(
-                        target: _center,
+                      initialCameraPosition: CameraPosition(
+                        target: center,
                         zoom: 11.0,
                       ),
                       markers: <Marker>{
                         Marker(
-                          markerId: const MarkerId('test_marker_id'),
+                          markerId: MarkerId("test_marker_id"),
                           position: LatLng(
-                            _center.latitude,
-                            _center.longitude,
+                            center.latitude,
+                            center.longitude,
                           ),
                           infoWindow: const InfoWindow(
                             title: 'An interesting location',

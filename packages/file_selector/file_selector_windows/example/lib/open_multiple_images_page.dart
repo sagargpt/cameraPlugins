@@ -11,15 +11,12 @@ import 'package:flutter/material.dart';
 /// Screen that allows the user to select multiple image files using
 /// `openFiles`, then displays the selected images in a gallery dialog.
 class OpenMultipleImagesPage extends StatelessWidget {
-  /// Default Constructor
-  const OpenMultipleImagesPage({Key? key}) : super(key: key);
-
   Future<void> _openImageFile(BuildContext context) async {
-    const XTypeGroup jpgsTypeGroup = XTypeGroup(
+    final XTypeGroup jpgsTypeGroup = XTypeGroup(
       label: 'JPEGs',
       extensions: <String>['jpg', 'jpeg'],
     );
-    const XTypeGroup pngTypeGroup = XTypeGroup(
+    final XTypeGroup pngTypeGroup = XTypeGroup(
       label: 'PNGs',
       extensions: <String>['png'],
     );
@@ -32,12 +29,10 @@ class OpenMultipleImagesPage extends StatelessWidget {
       // Operation was canceled by the user.
       return;
     }
-    if (context.mounted) {
-      await showDialog<void>(
-        context: context,
-        builder: (BuildContext context) => MultipleImagesDisplay(files),
-      );
-    }
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext context) => MultipleImagesDisplay(files),
+    );
   }
 
   @override
@@ -52,10 +47,7 @@ class OpenMultipleImagesPage extends StatelessWidget {
           children: <Widget>[
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                // TODO(darrenaustin): Migrate to new API once it lands in stable: https://github.com/flutter/flutter/issues/105724
-                // ignore: deprecated_member_use
                 primary: Colors.blue,
-                // ignore: deprecated_member_use
                 onPrimary: Colors.white,
               ),
               child: const Text('Press to open multiple images (png, jpg)'),
@@ -71,7 +63,7 @@ class OpenMultipleImagesPage extends StatelessWidget {
 /// Widget that displays a text file in a dialog.
 class MultipleImagesDisplay extends StatelessWidget {
   /// Default Constructor.
-  const MultipleImagesDisplay(this.files, {Key? key}) : super(key: key);
+  const MultipleImagesDisplay(this.files);
 
   /// The files containing the images.
   final List<XFile> files;

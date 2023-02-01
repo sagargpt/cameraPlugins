@@ -16,8 +16,7 @@ final LatLngBounds sydneyBounds = LatLngBounds(
 );
 
 class MapUiPage extends GoogleMapExampleAppPage {
-  const MapUiPage({Key? key})
-      : super(const Icon(Icons.map), 'User interface', key: key);
+  MapUiPage() : super(const Icon(Icons.map), 'User interface');
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +25,7 @@ class MapUiPage extends GoogleMapExampleAppPage {
 }
 
 class MapUiBody extends StatefulWidget {
-  const MapUiBody({Key? key}) : super(key: key);
+  const MapUiBody();
 
   @override
   State<StatefulWidget> createState() => MapUiBodyState();
@@ -35,14 +34,14 @@ class MapUiBody extends StatefulWidget {
 class MapUiBodyState extends State<MapUiBody> {
   MapUiBodyState();
 
-  static const CameraPosition _kInitialPosition = CameraPosition(
+  static final CameraPosition _kInitialPosition = const CameraPosition(
     target: LatLng(-33.852, 151.211),
     zoom: 11.0,
   );
 
   CameraPosition _position = _kInitialPosition;
   bool _isMapCreated = false;
-  final bool _isMoving = false;
+  bool _isMoving = false;
   bool _compassEnabled = true;
   bool _mapToolbarEnabled = true;
   CameraTargetBounds _cameraTargetBounds = CameraTargetBounds.unbounded;
@@ -240,7 +239,7 @@ class MapUiBodyState extends State<MapUiBody> {
   }
 
   Future<String> _getFileData(String path) async {
-    return rootBundle.loadString(path);
+    return await rootBundle.loadString(path);
   }
 
   void _setMapStyle(String mapStyle) {
@@ -336,6 +335,7 @@ class MapUiBodyState extends State<MapUiBody> {
       );
     }
     return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: columnChildren,
     );

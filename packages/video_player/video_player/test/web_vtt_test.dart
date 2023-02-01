@@ -14,9 +14,9 @@ void main() {
       parsedFile = WebVTTCaptionFile(_valid_vtt_with_metadata);
       expect(parsedFile.captions.length, 1);
 
-      expect(parsedFile.captions[0].start, const Duration(seconds: 1));
-      expect(parsedFile.captions[0].end,
-          const Duration(seconds: 2, milliseconds: 500));
+      expect(parsedFile.captions[0].start, Duration(seconds: 1));
+      expect(
+          parsedFile.captions[0].end, Duration(seconds: 2, milliseconds: 500));
       expect(parsedFile.captions[0].text, 'We are in New York City');
     });
 
@@ -25,11 +25,11 @@ void main() {
       expect(parsedFile.captions.length, 1);
 
       expect(parsedFile.captions[0].start,
-          const Duration(seconds: 2, milliseconds: 800));
-      expect(parsedFile.captions[0].end,
-          const Duration(seconds: 3, milliseconds: 283));
+          Duration(seconds: 2, milliseconds: 800));
+      expect(
+          parsedFile.captions[0].end, Duration(seconds: 3, milliseconds: 283));
       expect(parsedFile.captions[0].text,
-          '— It will perforate your stomach.\n— You could die.');
+          "— It will perforate your stomach.\n— You could die.");
     });
 
     test('with styles tags', () {
@@ -37,8 +37,9 @@ void main() {
       expect(parsedFile.captions.length, 3);
 
       expect(parsedFile.captions[0].start,
-          const Duration(seconds: 5, milliseconds: 200));
-      expect(parsedFile.captions[0].end, const Duration(seconds: 6));
+          Duration(seconds: 5, milliseconds: 200));
+      expect(
+          parsedFile.captions[0].end, Duration(seconds: 6, milliseconds: 000));
       expect(parsedFile.captions[0].text,
           "You know I'm so excited my glasses are falling off here.");
     });
@@ -48,9 +49,9 @@ void main() {
       expect(parsedFile.captions.length, 3);
 
       expect(parsedFile.captions[0].number, 1);
-      expect(parsedFile.captions.last.start, const Duration(seconds: 4));
-      expect(parsedFile.captions.last.end, const Duration(seconds: 5));
-      expect(parsedFile.captions.last.text, 'Transcrit par Célestes™');
+      expect(parsedFile.captions.last.start, Duration(seconds: 4));
+      expect(parsedFile.captions.last.end, Duration(seconds: 5));
+      expect(parsedFile.captions.last.text, "Transcrit par Célestes™");
     });
 
     test('with [hours]:[minutes]:[seconds].[milliseconds].', () {
@@ -58,9 +59,9 @@ void main() {
       expect(parsedFile.captions.length, 1);
 
       expect(parsedFile.captions[0].number, 1);
-      expect(parsedFile.captions.last.start, const Duration(seconds: 1));
-      expect(parsedFile.captions.last.end, const Duration(seconds: 2));
-      expect(parsedFile.captions.last.text, 'This is a test.');
+      expect(parsedFile.captions.last.start, Duration(seconds: 1));
+      expect(parsedFile.captions.last.end, Duration(seconds: 2));
+      expect(parsedFile.captions.last.text, "This is a test.");
     });
 
     test('with [minutes]:[seconds].[milliseconds].', () {
@@ -68,9 +69,9 @@ void main() {
       expect(parsedFile.captions.length, 1);
 
       expect(parsedFile.captions[0].number, 1);
-      expect(parsedFile.captions.last.start, const Duration(seconds: 3));
-      expect(parsedFile.captions.last.end, const Duration(seconds: 4));
-      expect(parsedFile.captions.last.text, 'This is a test.');
+      expect(parsedFile.captions.last.start, Duration(seconds: 3));
+      expect(parsedFile.captions.last.end, Duration(seconds: 4));
+      expect(parsedFile.captions.last.text, "This is a test.");
     });
 
     test('with invalid seconds format returns empty captions.', () {
@@ -104,8 +105,8 @@ void main() {
 
     final Caption firstCaption = parsedFile.captions.single;
     expect(firstCaption.number, 1);
-    expect(firstCaption.start, const Duration(seconds: 13));
-    expect(firstCaption.end, const Duration(seconds: 16));
+    expect(firstCaption.start, Duration(seconds: 13));
+    expect(firstCaption.end, Duration(seconds: 16, milliseconds: 0));
     expect(firstCaption.text, 'Valid');
   });
 }

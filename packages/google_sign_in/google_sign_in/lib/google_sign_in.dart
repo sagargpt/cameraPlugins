@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:async';
+import 'dart:ui' show hashValues;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show PlatformException;
@@ -12,7 +13,6 @@ import 'src/common.dart';
 
 export 'package:google_sign_in_platform_interface/google_sign_in_platform_interface.dart'
     show SignInOption;
-
 export 'src/common.dart';
 export 'widgets.dart';
 
@@ -130,7 +130,7 @@ class GoogleSignInAccount implements GoogleIdentity {
   }
 
   @override
-  bool operator ==(Object other) {
+  bool operator ==(dynamic other) {
     if (identical(this, other)) {
       return true;
     }
@@ -148,7 +148,7 @@ class GoogleSignInAccount implements GoogleIdentity {
 
   @override
   int get hashCode =>
-      Object.hash(displayName, email, id, photoUrl, _idToken, serverAuthCode);
+      hashValues(displayName, email, id, photoUrl, _idToken, serverAuthCode);
 
   @override
   String toString() {
@@ -179,16 +179,11 @@ class GoogleSignIn {
   /// The [hostedDomain] argument specifies a hosted domain restriction. By
   /// setting this, sign in will be restricted to accounts of the user in the
   /// specified domain. By default, the list of accounts will not be restricted.
-  ///
-  /// The [forceCodeForRefreshToken] is used on Android to ensure the authentication
-  /// code can be exchanged for a refresh token after the first request.
   GoogleSignIn({
     this.signInOption = SignInOption.standard,
     this.scopes = const <String>[],
     this.hostedDomain,
     this.clientId,
-    this.serverClientId,
-    this.forceCodeForRefreshToken = false,
   });
 
   /// Factory for creating default sign in user experience.
@@ -196,7 +191,10 @@ class GoogleSignIn {
     List<String> scopes = const <String>[],
     String? hostedDomain,
   }) {
-    return GoogleSignIn(scopes: scopes, hostedDomain: hostedDomain);
+    return GoogleSignIn(
+        signInOption: SignInOption.standard,
+        scopes: scopes,
+        hostedDomain: hostedDomain);
   }
 
   /// Factory for creating sign in suitable for games. This option is only
@@ -231,31 +229,8 @@ class GoogleSignIn {
   /// Domain to restrict sign-in to.
   final String? hostedDomain;
 
-  /// Client ID being used to connect to google sign-in.
-  ///
-  /// This option is not supported on all platforms (e.g. Android). It is
-  /// optional if file-based configuration is used.
-  ///
-  /// The value specified here has precedence over a value from a configuration
-  /// file.
+  /// Client ID being used to connect to google sign-in. Only supported on web.
   final String? clientId;
-
-  /// Client ID of the backend server to which the app needs to authenticate
-  /// itself.
-  ///
-  /// Optional and not supported on all platforms (e.g. web). By default, it
-  /// is initialized from a configuration file if available.
-  ///
-  /// The value specified here has precedence over a value from a configuration
-  /// file.
-  ///
-  /// [GoogleSignInAuthentication.idToken] and
-  /// [GoogleSignInAccount.serverAuthCode] will be specific to the backend
-  /// server.
-  final String? serverClientId;
-
-  /// Force the authorization code to be valid for a refresh token every time. Only needed on Android.
-  final bool forceCodeForRefreshToken;
 
   final StreamController<GoogleSignInAccount?> _currentUserController =
       StreamController<GoogleSignInAccount?>.broadcast();
@@ -267,8 +242,7 @@ class GoogleSignIn {
   // Future that completes when we've finished calling `init` on the native side
   Future<void>? _initialization;
 
-  Future<GoogleSignInAccount?> _callMethod(
-      Future<dynamic> Function() method) async {
+  Future<GoogleSignInAccount?> _callMethod(Function method) async {
     await _ensureInitialized();
 
     final dynamic response = await method();
@@ -287,19 +261,15 @@ class GoogleSignIn {
   }
 
   Future<void> _ensureInitialized() {
-    return _initialization ??=
-        GoogleSignInPlatform.instance.initWithParams(SignInInitParameters(
+    return _initialization ??= GoogleSignInPlatform.instance.init(
       signInOption: signInOption,
       scopes: scopes,
       hostedDomain: hostedDomain,
       clientId: clientId,
-      serverClientId: serverClientId,
-      forceCodeForRefreshToken: forceCodeForRefreshToken,
-    ))
-          ..catchError((dynamic _) {
-            // Invalidate initialization if it errors out.
-            _initialization = null;
-          });
+    )..catchError((dynamic _) {
+        // Invalidate initialization if it errors out.
+        _initialization = null;
+      });
   }
 
   /// The most recently scheduled method call.
@@ -325,7 +295,7 @@ class GoogleSignIn {
   /// method call may be skipped, if there's already [_currentUser] information.
   /// This is used from the [signIn] and [signInSilently] methods.
   Future<GoogleSignInAccount?> _addMethodCall(
-    Future<dynamic> Function() method, {
+    Function method, {
     bool canSkipCall = false,
   }) async {
     Future<GoogleSignInAccount?> response;

@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:camera_platform_interface/camera_platform_interface.dart';
+import 'package:cross_file/cross_file.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:stream_transform/stream_transform.dart';
@@ -22,7 +23,7 @@ class CameraWindows extends CameraPlatform {
   final MethodChannel pluginChannel =
       const MethodChannel('plugins.flutter.io/camera_windows');
 
-  /// Camera specific method channels to allow communicating with specific cameras.
+  /// Camera specific method channels to allow comminicating with specific cameras.
   final Map<int, MethodChannel> _cameraChannels = <int, MethodChannel>{};
 
   /// The controller that broadcasts events coming from handleCameraMethodCall
@@ -214,24 +215,15 @@ class CameraWindows extends CameraPlatform {
       pluginChannel.invokeMethod<void>('prepareForVideoRecording');
 
   @override
-  Future<void> startVideoRecording(int cameraId,
-      {Duration? maxVideoDuration}) async {
-    return startVideoCapturing(
-        VideoCaptureOptions(cameraId, maxDuration: maxVideoDuration));
-  }
-
-  @override
-  Future<void> startVideoCapturing(VideoCaptureOptions options) async {
-    if (options.streamCallback != null || options.streamOptions != null) {
-      throw UnimplementedError(
-          'Streaming is not currently supported on Windows');
-    }
-
+  Future<void> startVideoRecording(
+    int cameraId, {
+    Duration? maxVideoDuration,
+  }) async {
     await pluginChannel.invokeMethod<void>(
       'startVideoRecording',
       <String, dynamic>{
-        'cameraId': options.cameraId,
-        'maxVideoDuration': options.maxDuration?.inMilliseconds,
+        'cameraId': cameraId,
+        'maxVideoDuration': maxVideoDuration?.inMilliseconds,
       },
     );
   }
@@ -399,25 +391,24 @@ class CameraWindows extends CameraPlatform {
         );
         break;
       case 'video_recorded':
-        final Map<String, Object?> arguments =
-            (call.arguments as Map<Object?, Object?>).cast<String, Object?>();
-        final int? maxDuration = arguments['maxVideoDuration'] as int?;
         // This is called if maxVideoDuration was given on record start.
         cameraEventStreamController.add(
           VideoRecordedEvent(
             cameraId,
-            XFile(arguments['path']! as String),
-            maxDuration != null ? Duration(milliseconds: maxDuration) : null,
+            XFile(call.arguments['path'] as String),
+            call.arguments['maxVideoDuration'] != null
+                ? Duration(
+                    milliseconds: call.arguments['maxVideoDuration'] as int,
+                  )
+                : null,
           ),
         );
         break;
       case 'error':
-        final Map<String, Object?> arguments =
-            (call.arguments as Map<Object?, Object?>).cast<String, Object?>();
         cameraEventStreamController.add(
           CameraErrorEvent(
             cameraId,
-            arguments['description']! as String,
+            call.arguments['description'] as String,
           ),
         );
         break;

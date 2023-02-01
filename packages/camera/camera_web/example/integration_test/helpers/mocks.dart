@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: avoid_implementing_value_types
-
 import 'dart:async';
 import 'dart:html';
 import 'dart:ui';
@@ -115,8 +113,8 @@ class FakeElementStream<T extends Event> extends Fake
   final Stream<T> _stream;
 
   @override
-  StreamSubscription<T> listen(void Function(T event)? onData,
-      {Function? onError, void Function()? onDone, bool? cancelOnError}) {
+  StreamSubscription<T> listen(void onData(T event)?,
+      {Function? onError, void onDone()?, bool? cancelOnError}) {
     return _stream.listen(
       onData,
       onError: onError,

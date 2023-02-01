@@ -4,9 +4,10 @@
 
 import 'dart:async';
 
+import 'package:cross_file/cross_file.dart';
+import 'package:file_selector_platform_interface/file_selector_platform_interface.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
-import '../../file_selector_platform_interface.dart';
 import '../method_channel/method_channel_file_selector.dart';
 
 /// The interface that implementations of file_selector must implement.
@@ -36,7 +37,7 @@ abstract class FileSelectorPlatform extends PlatformInterface {
     _instance = instance;
   }
 
-  /// Opens a file dialog for loading files and returns a file path.
+  /// Open file dialog for loading files and return a file path
   /// Returns `null` if user cancels the operation.
   Future<XFile?> openFile({
     List<XTypeGroup>? acceptedTypeGroups,
@@ -46,7 +47,7 @@ abstract class FileSelectorPlatform extends PlatformInterface {
     throw UnimplementedError('openFile() has not been implemented.');
   }
 
-  /// Opens a file dialog for loading files and returns a list of file paths.
+  /// Open file dialog for loading files and return a list of file paths
   Future<List<XFile>> openFiles({
     List<XTypeGroup>? acceptedTypeGroups,
     String? initialDirectory,
@@ -55,7 +56,7 @@ abstract class FileSelectorPlatform extends PlatformInterface {
     throw UnimplementedError('openFiles() has not been implemented.');
   }
 
-  /// Opens a file dialog for saving files and returns a file path at which to save.
+  /// Open file dialog for saving files and return a file path at which to save
   /// Returns `null` if user cancels the operation.
   Future<String?> getSavePath({
     List<XTypeGroup>? acceptedTypeGroups,
@@ -66,20 +67,12 @@ abstract class FileSelectorPlatform extends PlatformInterface {
     throw UnimplementedError('getSavePath() has not been implemented.');
   }
 
-  /// Opens a file dialog for loading directories and returns a directory path.
+  /// Open file dialog for loading directories and return a directory path
   /// Returns `null` if user cancels the operation.
   Future<String?> getDirectoryPath({
     String? initialDirectory,
     String? confirmButtonText,
   }) {
     throw UnimplementedError('getDirectoryPath() has not been implemented.');
-  }
-
-  /// Opens a file dialog for loading directories and returns multiple directory paths.
-  Future<List<String>> getDirectoryPaths({
-    String? initialDirectory,
-    String? confirmButtonText,
-  }) {
-    throw UnimplementedError('getDirectoryPaths() has not been implemented.');
   }
 }

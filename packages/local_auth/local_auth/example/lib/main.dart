@@ -2,7 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// ignore_for_file: public_member_api_docs, avoid_print
+// ignore_for_file: public_member_api_docs
 
 import 'dart:async';
 
@@ -11,14 +11,12 @@ import 'package:flutter/services.dart';
 import 'package:local_auth/local_auth.dart';
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
-
   @override
-  State<MyApp> createState() => _MyAppState();
+  _MyAppState createState() => _MyAppState();
 }
 
 class _MyAppState extends State<MyApp> {
@@ -81,11 +79,9 @@ class _MyAppState extends State<MyApp> {
         _authorized = 'Authenticating';
       });
       authenticated = await auth.authenticate(
-        localizedReason: 'Let OS determine authentication method',
-        options: const AuthenticationOptions(
-          stickyAuth: true,
-        ),
-      );
+          localizedReason: 'Let OS determine authentication method',
+          useErrorDialogs: true,
+          stickyAuth: true);
       setState(() {
         _isAuthenticating = false;
       });
@@ -113,13 +109,11 @@ class _MyAppState extends State<MyApp> {
         _authorized = 'Authenticating';
       });
       authenticated = await auth.authenticate(
-        localizedReason:
-            'Scan your fingerprint (or face or whatever) to authenticate',
-        options: const AuthenticationOptions(
+          localizedReason:
+              'Scan your fingerprint (or face or whatever) to authenticate',
+          useErrorDialogs: true,
           stickyAuth: true,
-          biometricOnly: true,
-        ),
-      );
+          biometricOnly: true);
       setState(() {
         _isAuthenticating = false;
         _authorized = 'Authenticating';
@@ -169,14 +163,14 @@ class _MyAppState extends State<MyApp> {
                 const Divider(height: 100),
                 Text('Can check biometrics: $_canCheckBiometrics\n'),
                 ElevatedButton(
-                  onPressed: _checkBiometrics,
                   child: const Text('Check biometrics'),
+                  onPressed: _checkBiometrics,
                 ),
                 const Divider(height: 100),
                 Text('Available biometrics: $_availableBiometrics\n'),
                 ElevatedButton(
-                  onPressed: _getAvailableBiometrics,
                   child: const Text('Get available biometrics'),
+                  onPressed: _getAvailableBiometrics,
                 ),
                 const Divider(height: 100),
                 Text('Current State: $_authorized\n'),
@@ -195,7 +189,6 @@ class _MyAppState extends State<MyApp> {
                   Column(
                     children: <Widget>[
                       ElevatedButton(
-                        onPressed: _authenticate,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: const <Widget>[
@@ -203,9 +196,9 @@ class _MyAppState extends State<MyApp> {
                             Icon(Icons.perm_device_information),
                           ],
                         ),
+                        onPressed: _authenticate,
                       ),
                       ElevatedButton(
-                        onPressed: _authenticateWithBiometrics,
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: <Widget>[
@@ -215,6 +208,7 @@ class _MyAppState extends State<MyApp> {
                             const Icon(Icons.fingerprint),
                           ],
                         ),
+                        onPressed: _authenticateWithBiometrics,
                       ),
                     ],
                   ),

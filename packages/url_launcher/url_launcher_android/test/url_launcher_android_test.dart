@@ -10,12 +10,10 @@ import 'package:url_launcher_platform_interface/url_launcher_platform_interface.
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  const MethodChannel channel =
-      MethodChannel('plugins.flutter.io/url_launcher_android');
-  late List<MethodCall> log;
-
-  setUp(() {
-    log = <MethodCall>[];
+  group('$UrlLauncherAndroid', () {
+    const MethodChannel channel =
+        MethodChannel('plugins.flutter.io/url_launcher_android');
+    final List<MethodCall> log = <MethodCall>[];
     channel.setMockMethodCallHandler((MethodCall methodCall) async {
       log.add(methodCall);
 
@@ -23,21 +21,19 @@ void main() {
       // returned by the method channel if no return statement is specified.
       return null;
     });
-  });
 
-  test('registers instance', () {
-    UrlLauncherAndroid.registerWith();
-    expect(UrlLauncherPlatform.instance, isA<UrlLauncherAndroid>());
-  });
+    tearDown(() {
+      log.clear();
+    });
 
-  group('canLaunch', () {
-    test('calls through', () async {
-      channel.setMockMethodCallHandler((MethodCall methodCall) async {
-        log.add(methodCall);
-        return true;
-      });
+    test('registers instance', () {
+      UrlLauncherAndroid.registerWith();
+      expect(UrlLauncherPlatform.instance, isA<UrlLauncherAndroid>());
+    });
+
+    test('canLaunch', () async {
       final UrlLauncherAndroid launcher = UrlLauncherAndroid();
-      final bool canLaunch = await launcher.canLaunch('http://example.com/');
+      await launcher.canLaunch('http://example.com/');
       expect(
         log,
         <Matcher>[
@@ -46,66 +42,16 @@ void main() {
           })
         ],
       );
-      expect(canLaunch, true);
     });
 
-    test('returns false if platform returns null', () async {
+    test('canLaunch should return false if platform returns null', () async {
       final UrlLauncherAndroid launcher = UrlLauncherAndroid();
       final bool canLaunch = await launcher.canLaunch('http://example.com/');
 
       expect(canLaunch, false);
     });
 
-    test('checks a generic URL if an http URL returns false', () async {
-      const String specificUrl = 'http://example.com/';
-      const String genericUrl = 'http://flutter.dev';
-      channel.setMockMethodCallHandler((MethodCall methodCall) async {
-        log.add(methodCall);
-        return (methodCall.arguments as Map<Object?, Object?>)['url'] !=
-            specificUrl;
-      });
-
-      final UrlLauncherAndroid launcher = UrlLauncherAndroid();
-      final bool canLaunch = await launcher.canLaunch(specificUrl);
-
-      expect(canLaunch, true);
-      expect(log.length, 2);
-      expect((log[1].arguments as Map<Object?, Object?>)['url'], genericUrl);
-    });
-
-    test('checks a generic URL if an https URL returns false', () async {
-      const String specificUrl = 'https://example.com/';
-      const String genericUrl = 'https://flutter.dev';
-      channel.setMockMethodCallHandler((MethodCall methodCall) async {
-        log.add(methodCall);
-        return (methodCall.arguments as Map<Object?, Object?>)['url'] !=
-            specificUrl;
-      });
-
-      final UrlLauncherAndroid launcher = UrlLauncherAndroid();
-      final bool canLaunch = await launcher.canLaunch(specificUrl);
-
-      expect(canLaunch, true);
-      expect(log.length, 2);
-      expect((log[1].arguments as Map<Object?, Object?>)['url'], genericUrl);
-    });
-
-    test('does not a generic URL if a non-web URL returns false', () async {
-      channel.setMockMethodCallHandler((MethodCall methodCall) async {
-        log.add(methodCall);
-        return false;
-      });
-
-      final UrlLauncherAndroid launcher = UrlLauncherAndroid();
-      final bool canLaunch = await launcher.canLaunch('sms:12345');
-
-      expect(canLaunch, false);
-      expect(log.length, 1);
-    });
-  });
-
-  group('launch', () {
-    test('calls through', () async {
+    test('launch', () async {
       final UrlLauncherAndroid launcher = UrlLauncherAndroid();
       await launcher.launch(
         'http://example.com/',
@@ -131,7 +77,7 @@ void main() {
       );
     });
 
-    test('passes headers', () async {
+    test('launch with headers', () async {
       final UrlLauncherAndroid launcher = UrlLauncherAndroid();
       await launcher.launch(
         'http://example.com/',
@@ -157,7 +103,7 @@ void main() {
       );
     });
 
-    test('handles universal links only', () async {
+    test('launch universal links only', () async {
       final UrlLauncherAndroid launcher = UrlLauncherAndroid();
       await launcher.launch(
         'http://example.com/',
@@ -183,7 +129,7 @@ void main() {
       );
     });
 
-    test('handles force WebView', () async {
+    test('launch force WebView', () async {
       final UrlLauncherAndroid launcher = UrlLauncherAndroid();
       await launcher.launch(
         'http://example.com/',
@@ -209,7 +155,7 @@ void main() {
       );
     });
 
-    test('handles force WebView with javascript', () async {
+    test('launch force WebView enable javascript', () async {
       final UrlLauncherAndroid launcher = UrlLauncherAndroid();
       await launcher.launch(
         'http://example.com/',
@@ -235,7 +181,7 @@ void main() {
       );
     });
 
-    test('handles force WebView with DOM storage', () async {
+    test('launch force WebView enable DOM storage', () async {
       final UrlLauncherAndroid launcher = UrlLauncherAndroid();
       await launcher.launch(
         'http://example.com/',
@@ -261,7 +207,7 @@ void main() {
       );
     });
 
-    test('returns false if platform returns null', () async {
+    test('launch should return false if platform returns null', () async {
       final UrlLauncherAndroid launcher = UrlLauncherAndroid();
       final bool launched = await launcher.launch(
         'http://example.com/',
@@ -275,10 +221,8 @@ void main() {
 
       expect(launched, false);
     });
-  });
 
-  group('closeWebView', () {
-    test('calls through', () async {
+    test('closeWebView default behavior', () async {
       final UrlLauncherAndroid launcher = UrlLauncherAndroid();
       await launcher.closeWebView();
       expect(

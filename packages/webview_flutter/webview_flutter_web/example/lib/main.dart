@@ -6,12 +6,13 @@
 
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter_platform_interface/webview_flutter_platform_interface.dart';
-import 'package:webview_flutter_web/webview_flutter_web.dart';
+
+import 'web_view.dart';
 
 void main() {
-  WebViewPlatform.instance = WebWebViewPlatform();
   runApp(const MaterialApp(home: _WebViewExample()));
 }
 
@@ -23,13 +24,8 @@ class _WebViewExample extends StatefulWidget {
 }
 
 class _WebViewExampleState extends State<_WebViewExample> {
-  final PlatformWebViewController _controller = PlatformWebViewController(
-    const PlatformWebViewControllerCreationParams(),
-  )..loadRequest(
-      LoadRequestParams(
-        uri: Uri.parse('https://flutter.dev'),
-      ),
-    );
+  final Completer<WebViewController> _controller =
+      Completer<WebViewController>();
 
   @override
   Widget build(BuildContext context) {
@@ -37,12 +33,15 @@ class _WebViewExampleState extends State<_WebViewExample> {
       appBar: AppBar(
         title: const Text('Flutter WebView example'),
         actions: <Widget>[
-          _SampleMenu(_controller),
+          _SampleMenu(_controller.future),
         ],
       ),
-      body: PlatformWebViewWidget(
-        PlatformWebViewWidgetCreationParams(controller: _controller),
-      ).build(context),
+      body: WebView(
+        initialUrl: 'https://flutter.dev',
+        onWebViewCreated: (WebViewController controller) {
+          _controller.complete(controller);
+        },
+      ),
     );
   }
 }
@@ -54,37 +53,41 @@ enum _MenuOptions {
 class _SampleMenu extends StatelessWidget {
   const _SampleMenu(this.controller);
 
-  final PlatformWebViewController controller;
+  final Future<WebViewController> controller;
 
   @override
   Widget build(BuildContext context) {
-    return PopupMenuButton<_MenuOptions>(
-      onSelected: (_MenuOptions value) {
-        switch (value) {
-          case _MenuOptions.doPostRequest:
-            _onDoPostRequest(controller);
-            break;
-        }
+    return FutureBuilder<WebViewController>(
+      future: controller,
+      builder:
+          (BuildContext context, AsyncSnapshot<WebViewController> controller) {
+        return PopupMenuButton<_MenuOptions>(
+          onSelected: (_MenuOptions value) {
+            switch (value) {
+              case _MenuOptions.doPostRequest:
+                _onDoPostRequest(controller.data!, context);
+                break;
+            }
+          },
+          itemBuilder: (BuildContext context) => <PopupMenuItem<_MenuOptions>>[
+            const PopupMenuItem<_MenuOptions>(
+              value: _MenuOptions.doPostRequest,
+              child: Text('Post Request'),
+            ),
+          ],
+        );
       },
-      itemBuilder: (BuildContext context) => <PopupMenuItem<_MenuOptions>>[
-        const PopupMenuItem<_MenuOptions>(
-          value: _MenuOptions.doPostRequest,
-          child: Text('Post Request'),
-        ),
-      ],
     );
   }
 
-  Future<void> _onDoPostRequest(PlatformWebViewController controller) async {
-    final LoadRequestParams params = LoadRequestParams(
+  Future<void> _onDoPostRequest(
+      WebViewController controller, BuildContext context) async {
+    final WebViewRequest request = WebViewRequest(
       uri: Uri.parse('https://httpbin.org/post'),
-      method: LoadRequestMethod.post,
-      headers: const <String, String>{
-        'foo': 'bar',
-        'Content-Type': 'text/plain'
-      },
+      method: WebViewRequestMethod.post,
+      headers: <String, String>{'foo': 'bar', 'Content-Type': 'text/plain'},
       body: Uint8List.fromList('Test Body'.codeUnits),
     );
-    await controller.loadRequest(params);
+    await controller.loadRequest(request);
   }
 }

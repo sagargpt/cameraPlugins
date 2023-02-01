@@ -19,22 +19,22 @@ void main() {
     pathProvider = FakePathProviderWindows();
   });
 
-  Future<String> getFilePath() async {
+  Future<String> _getFilePath() async {
     final String? directory = await pathProvider.getApplicationSupportPath();
     return path.join(directory!, 'shared_preferences.json');
   }
 
-  Future<void> writeTestFile(String value) async {
-    fileSystem.file(await getFilePath())
+  Future<void> _writeTestFile(String value) async {
+    fileSystem.file(await _getFilePath())
       ..createSync(recursive: true)
       ..writeAsStringSync(value);
   }
 
-  Future<String> readTestFile() async {
-    return fileSystem.file(await getFilePath()).readAsStringSync();
+  Future<String> _readTestFile() async {
+    return fileSystem.file(await _getFilePath()).readAsStringSync();
   }
 
-  SharedPreferencesWindows getPreferences() {
+  SharedPreferencesWindows _getPreferences() {
     final SharedPreferencesWindows prefs = SharedPreferencesWindows();
     prefs.fs = fileSystem;
     prefs.pathProvider = pathProvider;
@@ -48,8 +48,8 @@ void main() {
   });
 
   test('getAll', () async {
-    await writeTestFile('{"key1": "one", "key2": 2}');
-    final SharedPreferencesWindows prefs = getPreferences();
+    await _writeTestFile('{"key1": "one", "key2": 2}');
+    final SharedPreferencesWindows prefs = _getPreferences();
 
     final Map<String, Object> values = await prefs.getAll();
     expect(values, hasLength(2));
@@ -58,30 +58,30 @@ void main() {
   });
 
   test('remove', () async {
-    await writeTestFile('{"key1":"one","key2":2}');
-    final SharedPreferencesWindows prefs = getPreferences();
+    await _writeTestFile('{"key1":"one","key2":2}');
+    final SharedPreferencesWindows prefs = _getPreferences();
 
     await prefs.remove('key2');
 
-    expect(await readTestFile(), '{"key1":"one"}');
+    expect(await _readTestFile(), '{"key1":"one"}');
   });
 
   test('setValue', () async {
-    await writeTestFile('{}');
-    final SharedPreferencesWindows prefs = getPreferences();
+    await _writeTestFile('{}');
+    final SharedPreferencesWindows prefs = _getPreferences();
 
     await prefs.setValue('', 'key1', 'one');
     await prefs.setValue('', 'key2', 2);
 
-    expect(await readTestFile(), '{"key1":"one","key2":2}');
+    expect(await _readTestFile(), '{"key1":"one","key2":2}');
   });
 
   test('clear', () async {
-    await writeTestFile('{"key1":"one","key2":2}');
-    final SharedPreferencesWindows prefs = getPreferences();
+    await _writeTestFile('{"key1":"one","key2":2}');
+    final SharedPreferencesWindows prefs = _getPreferences();
 
     await prefs.clear();
-    expect(await readTestFile(), '{}');
+    expect(await _readTestFile(), '{}');
   });
 }
 

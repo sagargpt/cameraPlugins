@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// TODO(a14n): remove this import once Flutter 3.1 or later reaches stable (including flutter/flutter#106316)
-// ignore: unnecessary_import
 import 'dart:ui';
 
 import 'package:flutter/services.dart';
@@ -12,7 +10,7 @@ import 'package:video_player_android/src/messages.g.dart';
 import 'package:video_player_android/video_player_android.dart';
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
 
-import 'test_api.g.dart';
+import 'test_api.dart';
 
 class _ApiLogger implements TestHostVideoPlayerApi {
   final List<String> log = <String>[];
@@ -261,20 +259,6 @@ void main() {
                     'flutter.io/videoPlayer/videoEvents123',
                     const StandardMethodCodec()
                         .encodeSuccessEnvelope(<String, dynamic>{
-                      'event': 'initialized',
-                      'duration': 98765,
-                      'width': 1920,
-                      'height': 1080,
-                      'rotationCorrection': 180,
-                    }),
-                    (ByteData? data) {});
-
-            await _ambiguate(ServicesBinding.instance)
-                ?.defaultBinaryMessenger
-                .handlePlatformMessage(
-                    'flutter.io/videoPlayer/videoEvents123',
-                    const StandardMethodCodec()
-                        .encodeSuccessEnvelope(<String, dynamic>{
                       'event': 'completed',
                     }),
                     (ByteData? data) {});
@@ -328,20 +312,13 @@ void main() {
               eventType: VideoEventType.initialized,
               duration: const Duration(milliseconds: 98765),
               size: const Size(1920, 1080),
-              rotationCorrection: 0,
-            ),
-            VideoEvent(
-              eventType: VideoEventType.initialized,
-              duration: const Duration(milliseconds: 98765),
-              size: const Size(1920, 1080),
-              rotationCorrection: 180,
             ),
             VideoEvent(eventType: VideoEventType.completed),
             VideoEvent(
                 eventType: VideoEventType.bufferingUpdate,
                 buffered: <DurationRange>[
                   DurationRange(
-                    Duration.zero,
+                    const Duration(milliseconds: 0),
                     const Duration(milliseconds: 1234),
                   ),
                   DurationRange(
@@ -360,4 +337,5 @@ void main() {
 ///
 /// We use this so that APIs that have become non-nullable can still be used
 /// with `!` and `?` on the stable branch.
+// TODO(ianh): Remove this once we roll stable in late 2021.
 T? _ambiguate<T>(T? value) => value;

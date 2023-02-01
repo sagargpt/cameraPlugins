@@ -14,11 +14,13 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import io.flutter.plugin.common.BinaryMessenger;
 import io.flutter.plugin.platform.PlatformView;
+import io.flutter.plugins.webviewflutter.DownloadListenerHostApiImpl.DownloadListenerImpl;
 import io.flutter.plugins.webviewflutter.GeneratedAndroidWebView.WebViewHostApi;
+import io.flutter.plugins.webviewflutter.WebChromeClientHostApiImpl.WebChromeClientImpl;
+import io.flutter.plugins.webviewflutter.WebViewClientHostApiImpl.ReleasableWebViewClient;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * Host api implementation for {@link WebView}.
@@ -26,11 +28,15 @@ import java.util.Objects;
  * <p>Handles creating {@link WebView}s that intercommunicate with a paired Dart object.
  */
 public class WebViewHostApiImpl implements WebViewHostApi {
+  // TODO(bparrishMines): This can be removed once pigeon supports null values: https://github.com/flutter/flutter/issues/59118
+  // Workaround to represent null Strings since pigeon doesn't support null
+  // values.
+  private static final String nullStringIdentifier = "<null-value>";
+
   private final InstanceManager instanceManager;
   private final WebViewProxy webViewProxy;
   // Only used with WebView using virtual displays.
   @Nullable private final View containerView;
-  private final BinaryMessenger binaryMessenger;
 
   private Context context;
 
@@ -40,14 +46,10 @@ public class WebViewHostApiImpl implements WebViewHostApi {
      * Creates a {@link WebViewPlatformView}.
      *
      * @param context an Activity Context to access application assets
-     * @param binaryMessenger used to communicate with Dart over asynchronous messages
-     * @param instanceManager mangages instances used to communicate with the corresponding objects
-     *     in Dart
      * @return the created {@link WebViewPlatformView}
      */
-    public WebViewPlatformView createWebView(
-        Context context, BinaryMessenger binaryMessenger, InstanceManager instanceManager) {
-      return new WebViewPlatformView(context, binaryMessenger, instanceManager);
+    public WebViewPlatformView createWebView(Context context) {
+      return new WebViewPlatformView(context);
     }
 
     /**
@@ -58,12 +60,8 @@ public class WebViewHostApiImpl implements WebViewHostApi {
      * @return the created {@link InputAwareWebViewPlatformView}
      */
     public InputAwareWebViewPlatformView createInputAwareWebView(
-        Context context,
-        BinaryMessenger binaryMessenger,
-        InstanceManager instanceManager,
-        @Nullable View containerView) {
-      return new InputAwareWebViewPlatformView(
-          context, binaryMessenger, instanceManager, containerView);
+        Context context, @Nullable View containerView) {
+      return new InputAwareWebViewPlatformView(context, containerView);
     }
 
     /**
@@ -76,24 +74,51 @@ public class WebViewHostApiImpl implements WebViewHostApi {
     }
   }
 
+  private static class ReleasableValue<T extends Releasable> {
+    @Nullable private T value;
+
+    ReleasableValue() {}
+
+    ReleasableValue(@Nullable T value) {
+      this.value = value;
+    }
+
+    void set(@Nullable T newValue) {
+      release();
+      value = newValue;
+    }
+
+    @Nullable
+    T get() {
+      return value;
+    }
+
+    void release() {
+      if (value != null) {
+        value.release();
+      }
+      value = null;
+    }
+  }
+
   /** Implementation of {@link WebView} that can be used as a Flutter {@link PlatformView}s. */
-  public static class WebViewPlatformView extends WebView implements PlatformView {
-    private WebViewClient currentWebViewClient;
-    private WebChromeClientHostApiImpl.SecureWebChromeClient currentWebChromeClient;
+  public static class WebViewPlatformView extends WebView implements PlatformView, Releasable {
+    private final ReleasableValue<WebViewClientHostApiImpl.ReleasableWebViewClient>
+        currentWebViewClient = new ReleasableValue<>();
+    private final ReleasableValue<DownloadListenerImpl> currentDownloadListener =
+        new ReleasableValue<>();
+    private final ReleasableValue<WebChromeClientImpl> currentWebChromeClient =
+        new ReleasableValue<>();
+    private final Map<String, ReleasableValue<JavaScriptChannel>> javaScriptInterfaces =
+        new HashMap<>();
 
     /**
      * Creates a {@link WebViewPlatformView}.
      *
      * @param context an Activity Context to access application assets. This value cannot be null.
      */
-    public WebViewPlatformView(
-        Context context, BinaryMessenger binaryMessenger, InstanceManager instanceManager) {
+    public WebViewPlatformView(Context context) {
       super(context);
-      currentWebViewClient = new WebViewClient();
-      currentWebChromeClient = new WebChromeClientHostApiImpl.SecureWebChromeClient();
-
-      setWebViewClient(currentWebViewClient);
-      setWebChromeClient(currentWebChromeClient);
     }
 
     @Override
@@ -102,32 +127,63 @@ public class WebViewHostApiImpl implements WebViewHostApi {
     }
 
     @Override
-    public void dispose() {}
+    public void dispose() {
+      destroy();
+    }
 
     @Override
     public void setWebViewClient(WebViewClient webViewClient) {
       super.setWebViewClient(webViewClient);
-      currentWebViewClient = webViewClient;
-      currentWebChromeClient.setWebViewClient(webViewClient);
+      currentWebViewClient.set((ReleasableWebViewClient) webViewClient);
+
+      final WebChromeClientImpl webChromeClient = currentWebChromeClient.get();
+      if (webChromeClient != null) {
+        ((WebChromeClientImpl) webChromeClient).setWebViewClient(webViewClient);
+      }
+    }
+
+    @Override
+    public void setDownloadListener(DownloadListener listener) {
+      super.setDownloadListener(listener);
+      currentDownloadListener.set((DownloadListenerImpl) listener);
     }
 
     @Override
     public void setWebChromeClient(WebChromeClient client) {
       super.setWebChromeClient(client);
-      if (!(client instanceof WebChromeClientHostApiImpl.SecureWebChromeClient)) {
-        throw new AssertionError("Client must be a SecureWebChromeClient.");
-      }
-      currentWebChromeClient = (WebChromeClientHostApiImpl.SecureWebChromeClient) client;
-      currentWebChromeClient.setWebViewClient(currentWebViewClient);
+      currentWebChromeClient.set((WebChromeClientImpl) client);
     }
 
-    // When running unit tests, the parent `WebView` class is replaced by a stub that returns null
-    // for every method. This is overridden so that this returns the current WebChromeClient during
-    // unit tests. This should only remain overridden as long as `setWebChromeClient` is overridden.
-    @Nullable
+    @SuppressLint("JavascriptInterface")
     @Override
-    public WebChromeClient getWebChromeClient() {
-      return currentWebChromeClient;
+    public void addJavascriptInterface(Object object, String name) {
+      super.addJavascriptInterface(object, name);
+      if (object instanceof JavaScriptChannel) {
+        final ReleasableValue<JavaScriptChannel> javaScriptChannel = javaScriptInterfaces.get(name);
+        if (javaScriptChannel != null && javaScriptChannel.get() != object) {
+          javaScriptChannel.release();
+        }
+        javaScriptInterfaces.put(name, new ReleasableValue<>((JavaScriptChannel) object));
+      }
+    }
+
+    @Override
+    public void removeJavascriptInterface(@NonNull String name) {
+      super.removeJavascriptInterface(name);
+      final ReleasableValue<JavaScriptChannel> javaScriptChannel = javaScriptInterfaces.get(name);
+      javaScriptChannel.release();
+      javaScriptInterfaces.remove(name);
+    }
+
+    @Override
+    public void release() {
+      currentWebViewClient.release();
+      currentDownloadListener.release();
+      currentWebChromeClient.release();
+      for (ReleasableValue<JavaScriptChannel> channel : javaScriptInterfaces.values()) {
+        channel.release();
+      }
+      javaScriptInterfaces.clear();
     }
   }
 
@@ -137,26 +193,23 @@ public class WebViewHostApiImpl implements WebViewHostApi {
    */
   @SuppressLint("ViewConstructor")
   public static class InputAwareWebViewPlatformView extends InputAwareWebView
-      implements PlatformView {
-    private WebViewClient currentWebViewClient;
-    private WebChromeClientHostApiImpl.SecureWebChromeClient currentWebChromeClient;
+      implements PlatformView, Releasable {
+    private final ReleasableValue<WebViewClientHostApiImpl.ReleasableWebViewClient>
+        currentWebViewClient = new ReleasableValue<>();
+    private final ReleasableValue<DownloadListenerImpl> currentDownloadListener =
+        new ReleasableValue<>();
+    private final ReleasableValue<WebChromeClientImpl> currentWebChromeClient =
+        new ReleasableValue<>();
+    private final Map<String, ReleasableValue<JavaScriptChannel>> javaScriptInterfaces =
+        new HashMap<>();
 
     /**
      * Creates a {@link InputAwareWebViewPlatformView}.
      *
      * @param context an Activity Context to access application assets. This value cannot be null.
      */
-    public InputAwareWebViewPlatformView(
-        Context context,
-        BinaryMessenger binaryMessenger,
-        InstanceManager instanceManager,
-        View containerView) {
+    public InputAwareWebViewPlatformView(Context context, View containerView) {
       super(context, containerView);
-      currentWebViewClient = new WebViewClient();
-      currentWebChromeClient = new WebChromeClientHostApiImpl.SecureWebChromeClient();
-
-      setWebViewClient(currentWebViewClient);
-      setWebChromeClient(currentWebChromeClient);
     }
 
     @Override
@@ -193,18 +246,56 @@ public class WebViewHostApiImpl implements WebViewHostApi {
     @Override
     public void setWebViewClient(WebViewClient webViewClient) {
       super.setWebViewClient(webViewClient);
-      currentWebViewClient = webViewClient;
-      currentWebChromeClient.setWebViewClient(webViewClient);
+      currentWebViewClient.set((ReleasableWebViewClient) webViewClient);
+
+      final WebChromeClientImpl webChromeClient = currentWebChromeClient.get();
+      if (webChromeClient != null) {
+        webChromeClient.setWebViewClient(webViewClient);
+      }
+    }
+
+    @Override
+    public void setDownloadListener(DownloadListener listener) {
+      super.setDownloadListener(listener);
+      currentDownloadListener.set((DownloadListenerImpl) listener);
     }
 
     @Override
     public void setWebChromeClient(WebChromeClient client) {
       super.setWebChromeClient(client);
-      if (!(client instanceof WebChromeClientHostApiImpl.SecureWebChromeClient)) {
-        throw new AssertionError("Client must be a SecureWebChromeClient.");
+      currentWebChromeClient.set((WebChromeClientImpl) client);
+    }
+
+    @SuppressLint("JavascriptInterface")
+    @Override
+    public void addJavascriptInterface(Object object, String name) {
+      super.addJavascriptInterface(object, name);
+      if (object instanceof JavaScriptChannel) {
+        final ReleasableValue<JavaScriptChannel> javaScriptChannel = javaScriptInterfaces.get(name);
+        if (javaScriptChannel != null && javaScriptChannel.get() != object) {
+          javaScriptChannel.release();
+        }
+        javaScriptInterfaces.put(name, new ReleasableValue<>((JavaScriptChannel) object));
       }
-      currentWebChromeClient = (WebChromeClientHostApiImpl.SecureWebChromeClient) client;
-      currentWebChromeClient.setWebViewClient(currentWebViewClient);
+    }
+
+    @Override
+    public void removeJavascriptInterface(@NonNull String name) {
+      super.removeJavascriptInterface(name);
+      final ReleasableValue<JavaScriptChannel> javaScriptChannel = javaScriptInterfaces.get(name);
+      javaScriptChannel.release();
+      javaScriptInterfaces.remove(name);
+    }
+
+    @Override
+    public void release() {
+      currentWebViewClient.release();
+      currentDownloadListener.release();
+      currentWebChromeClient.release();
+      for (ReleasableValue<JavaScriptChannel> channel : javaScriptInterfaces.values()) {
+        channel.release();
+      }
+      javaScriptInterfaces.clear();
     }
   }
 
@@ -212,19 +303,16 @@ public class WebViewHostApiImpl implements WebViewHostApi {
    * Creates a host API that handles creating {@link WebView}s and invoking its methods.
    *
    * @param instanceManager maintains instances stored to communicate with Dart objects
-   * @param binaryMessenger used to communicate with Dart over asynchronous messages
    * @param webViewProxy handles creating {@link WebView}s and calling its static methods
    * @param context an Activity Context to access application assets. This value cannot be null.
    * @param containerView parent of the webView
    */
   public WebViewHostApiImpl(
       InstanceManager instanceManager,
-      BinaryMessenger binaryMessenger,
       WebViewProxy webViewProxy,
       Context context,
       @Nullable View containerView) {
     this.instanceManager = instanceManager;
-    this.binaryMessenger = binaryMessenger;
     this.webViewProxy = webViewProxy;
     this.context = context;
     this.containerView = containerView;
@@ -248,18 +336,27 @@ public class WebViewHostApiImpl implements WebViewHostApi {
 
     final WebView webView =
         useHybridComposition
-            ? webViewProxy.createWebView(context, binaryMessenger, instanceManager)
-            : webViewProxy.createInputAwareWebView(
-                context, binaryMessenger, instanceManager, containerView);
+            ? webViewProxy.createWebView(context)
+            : webViewProxy.createInputAwareWebView(context, containerView);
 
     displayListenerProxy.onPostWebViewInitialization(displayManager);
-    instanceManager.addDartCreatedInstance(webView, instanceId);
+    instanceManager.addInstance(webView, instanceId);
+  }
+
+  @Override
+  public void dispose(Long instanceId) {
+    final WebView instance = (WebView) instanceManager.getInstance(instanceId);
+    if (instance != null) {
+      ((Releasable) instance).release();
+      instanceManager.removeInstance(instance);
+    }
   }
 
   @Override
   public void loadData(Long instanceId, String data, String mimeType, String encoding) {
     final WebView webView = (WebView) instanceManager.getInstance(instanceId);
-    webView.loadData(data, mimeType, encoding);
+    webView.loadData(
+        data, parseNullStringIdentifier(mimeType), parseNullStringIdentifier(encoding));
   }
 
   @Override
@@ -271,7 +368,12 @@ public class WebViewHostApiImpl implements WebViewHostApi {
       String encoding,
       String historyUrl) {
     final WebView webView = (WebView) instanceManager.getInstance(instanceId);
-    webView.loadDataWithBaseURL(baseUrl, data, mimeType, encoding, historyUrl);
+    webView.loadDataWithBaseURL(
+        parseNullStringIdentifier(baseUrl),
+        data,
+        parseNullStringIdentifier(mimeType),
+        parseNullStringIdentifier(encoding),
+        parseNullStringIdentifier(historyUrl));
   }
 
   @Override
@@ -289,7 +391,8 @@ public class WebViewHostApiImpl implements WebViewHostApi {
   @Override
   public String getUrl(Long instanceId) {
     final WebView webView = (WebView) instanceManager.getInstance(instanceId);
-    return webView.getUrl();
+    final String result = webView.getUrl();
+    return result != null ? result : nullStringIdentifier;
   }
 
   @Override
@@ -338,7 +441,8 @@ public class WebViewHostApiImpl implements WebViewHostApi {
   @Override
   public String getTitle(Long instanceId) {
     final WebView webView = (WebView) instanceManager.getInstance(instanceId);
-    return webView.getTitle();
+    final String result = webView.getTitle();
+    return result != null ? result : nullStringIdentifier;
   }
 
   @Override
@@ -363,16 +467,6 @@ public class WebViewHostApiImpl implements WebViewHostApi {
   public Long getScrollY(Long instanceId) {
     final WebView webView = (WebView) instanceManager.getInstance(instanceId);
     return (long) webView.getScrollY();
-  }
-
-  @NonNull
-  @Override
-  public GeneratedAndroidWebView.WebViewPoint getScrollPosition(@NonNull Long instanceId) {
-    final WebView webView = Objects.requireNonNull(instanceManager.getInstance(instanceId));
-    return new GeneratedAndroidWebView.WebViewPoint.Builder()
-        .setX((long) webView.getScrollX())
-        .setY((long) webView.getScrollY())
-        .build();
   }
 
   @Override
@@ -420,8 +514,12 @@ public class WebViewHostApiImpl implements WebViewHostApi {
     webView.setBackgroundColor(color.intValue());
   }
 
-  /** Maintains instances used to communicate with the corresponding WebView Dart object. */
-  public InstanceManager getInstanceManager() {
-    return instanceManager;
+  @Nullable
+  private static String parseNullStringIdentifier(String value) {
+    if (value.equals(nullStringIdentifier)) {
+      return null;
+    }
+
+    return value;
   }
 }

@@ -6,6 +6,8 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
+import 'method_channel_video_player.dart';
+
 /// The interface that implementations of video_player must implement.
 ///
 /// Platform implementations should extend this class rather than implement it as `video_player`
@@ -19,12 +21,11 @@ abstract class VideoPlayerPlatform extends PlatformInterface {
 
   static final Object _token = Object();
 
-  static VideoPlayerPlatform _instance = _PlaceholderImplementation();
+  static VideoPlayerPlatform _instance = MethodChannelVideoPlayer();
 
-  /// The instance of [VideoPlayerPlatform] to use.
+  /// The default instance of [VideoPlayerPlatform] to use.
   ///
-  /// Defaults to a placeholder that does not override any methods, and thus
-  /// throws `UnimplementedError` in most cases.
+  /// Defaults to [MethodChannelVideoPlayer].
   static VideoPlayerPlatform get instance => _instance;
 
   /// Platform-specific plugins should override this with their own
@@ -104,8 +105,6 @@ abstract class VideoPlayerPlatform extends PlatformInterface {
   }
 }
 
-class _PlaceholderImplementation extends VideoPlayerPlatform {}
-
 /// Description of the data source used to create an instance of
 /// the video player.
 class DataSource {
@@ -114,7 +113,7 @@ class DataSource {
   /// The [sourceType] is always required.
   ///
   /// The [uri] argument takes the form of `'https://example.com/video.mp4'` or
-  /// `'file:///absolute/path/to/local/video.mp4`.
+  /// `'file://${file.path}'`.
   ///
   /// The [formatHint] argument can be null.
   ///
@@ -200,8 +199,8 @@ class VideoEvent {
   ///
   /// The [eventType] argument is required.
   ///
-  /// Depending on the [eventType], the [duration], [size],
-  /// [rotationCorrection], and [buffered] arguments can be null.
+  /// Depending on the [eventType], the [duration], [size] and [buffered]
+  /// arguments can be null.
   // TODO(stuartmorgan): Temporarily suppress warnings about not using const
   // in all of the other video player packages, fix this, and then update
   // the other packages to use const.
@@ -210,7 +209,6 @@ class VideoEvent {
     required this.eventType,
     this.duration,
     this.size,
-    this.rotationCorrection,
     this.buffered,
   });
 
@@ -227,11 +225,6 @@ class VideoEvent {
   /// Only used if [eventType] is [VideoEventType.initialized].
   final Size? size;
 
-  /// Degrees to rotate the video (clockwise) so it is displayed correctly.
-  ///
-  /// Only used if [eventType] is [VideoEventType.initialized].
-  final int? rotationCorrection;
-
   /// Buffered parts of the video.
   ///
   /// Only used if [eventType] is [VideoEventType.bufferingUpdate].
@@ -245,18 +238,15 @@ class VideoEvent {
             eventType == other.eventType &&
             duration == other.duration &&
             size == other.size &&
-            rotationCorrection == other.rotationCorrection &&
             listEquals(buffered, other.buffered);
   }
 
   @override
-  int get hashCode => Object.hash(
-        eventType,
-        duration,
-        size,
-        rotationCorrection,
-        buffered,
-      );
+  int get hashCode =>
+      eventType.hashCode ^
+      duration.hashCode ^
+      size.hashCode ^
+      buffered.hashCode;
 }
 
 /// Type of the event.
@@ -345,7 +335,7 @@ class DurationRange {
           end == other.end;
 
   @override
-  int get hashCode => Object.hash(start, end);
+  int get hashCode => start.hashCode ^ end.hashCode;
 }
 
 /// [VideoPlayerOptions] can be optionally used to set additional player settings

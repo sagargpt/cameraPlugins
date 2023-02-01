@@ -3,7 +3,10 @@
 // found in the LICENSE file.
 
 import 'package:flutter/services.dart';
-import 'local_auth_platform_interface.dart';
+import 'package:local_auth_platform_interface/local_auth_platform_interface.dart';
+import 'package:local_auth_platform_interface/types/auth_messages.dart';
+import 'package:local_auth_platform_interface/types/auth_options.dart';
+import 'package:local_auth_platform_interface/types/biometric_type.dart';
 
 const MethodChannel _channel = MethodChannel('plugins.flutter.io/local_auth');
 
@@ -54,8 +57,6 @@ class DefaultLocalAuthPlatform extends LocalAuthPlatform {
           biometrics.add(BiometricType.iris);
           break;
         case 'undefined':
-          // Sentinel value for the case when nothing is enrolled, but hardware
-          // support for biometrics is available.
           break;
       }
     }
@@ -64,14 +65,7 @@ class DefaultLocalAuthPlatform extends LocalAuthPlatform {
 
   @override
   Future<bool> deviceSupportsBiometrics() async {
-    final List<String> availableBiometrics =
-        (await _channel.invokeListMethod<String>(
-              'getAvailableBiometrics',
-            )) ??
-            <String>[];
-    // If anything, including the 'undefined' sentinel, is returned, then there
-    // is device support for biometrics.
-    return availableBiometrics.isNotEmpty;
+    return (await getEnrolledBiometrics()).isNotEmpty;
   }
 
   @override

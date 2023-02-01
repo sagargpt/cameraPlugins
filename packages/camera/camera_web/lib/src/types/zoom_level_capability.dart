@@ -3,6 +3,7 @@
 // found in the LICENSE file.
 
 import 'dart:html' as html;
+import 'dart:ui' show hashValues;
 
 import 'package:flutter/foundation.dart';
 
@@ -45,5 +46,5 @@ class ZoomLevelCapability {
   }
 
   @override
-  int get hashCode => Object.hash(minimum, maximum, videoTrack);
+  int get hashCode => hashValues(minimum, maximum, videoTrack);
 }

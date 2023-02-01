@@ -8,9 +8,6 @@ import 'package:flutter/material.dart';
 /// Screen that allows the user to select a directory using `getDirectoryPath`,
 ///  then displays the selected directory in a dialog.
 class GetDirectoryPage extends StatelessWidget {
-  /// Default Constructor
-  const GetDirectoryPage({Key? key}) : super(key: key);
-
   Future<void> _getDirectoryPath(BuildContext context) async {
     const String confirmButtonText = 'Choose';
     final String? directoryPath =
@@ -21,12 +18,10 @@ class GetDirectoryPage extends StatelessWidget {
       // Operation was canceled by the user.
       return;
     }
-    if (context.mounted) {
-      await showDialog<void>(
-        context: context,
-        builder: (BuildContext context) => TextDisplay(directoryPath),
-      );
-    }
+    await showDialog<void>(
+      context: context,
+      builder: (BuildContext context) => TextDisplay(directoryPath),
+    );
   }
 
   @override
@@ -41,10 +36,7 @@ class GetDirectoryPage extends StatelessWidget {
           children: <Widget>[
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                // TODO(darrenaustin): Migrate to new API once it lands in stable: https://github.com/flutter/flutter/issues/105724
-                // ignore: deprecated_member_use
                 primary: Colors.blue,
-                // ignore: deprecated_member_use
                 onPrimary: Colors.white,
               ),
               child: const Text('Press to ask user to choose a directory'),
@@ -60,7 +52,7 @@ class GetDirectoryPage extends StatelessWidget {
 /// Widget that displays a text file in a dialog.
 class TextDisplay extends StatelessWidget {
   /// Creates a `TextDisplay`.
-  const TextDisplay(this.directoryPath, {Key? key}) : super(key: key);
+  const TextDisplay(this.directoryPath);
 
   /// The path selected in the dialog.
   final String directoryPath;

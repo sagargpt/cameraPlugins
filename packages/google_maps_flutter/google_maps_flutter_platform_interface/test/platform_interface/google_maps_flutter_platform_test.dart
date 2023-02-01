@@ -6,10 +6,12 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_test/flutter_test.dart';
-import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
 import 'package:mockito/mockito.dart';
+import 'package:flutter_test/flutter_test.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
+import 'package:google_maps_flutter_platform_interface/src/method_channel/method_channel_google_maps_flutter.dart';
+import 'package:google_maps_flutter_platform_interface/google_maps_flutter_platform_interface.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -27,14 +29,7 @@ void main() {
       expect(() {
         GoogleMapsFlutterPlatform.instance =
             ImplementsGoogleMapsFlutterPlatform();
-        // In versions of `package:plugin_platform_interface` prior to fixing
-        // https://github.com/flutter/flutter/issues/109339, an attempt to
-        // implement a platform interface using `implements` would sometimes
-        // throw a `NoSuchMethodError` and other times throw an
-        // `AssertionError`.  After the issue is fixed, an `AssertionError` will
-        // always be thrown.  For the purpose of this test, we don't really care
-        // what exception is thrown, so just allow any exception.
-      }, throwsA(anything));
+      }, throwsA(isInstanceOf<AssertionError>()));
     });
 
     test('Can be mocked with `implements`', () {
@@ -56,28 +51,8 @@ void main() {
           platform.buildViewWithTextDirection(
             0,
             (_) {},
-            initialCameraPosition:
-                const CameraPosition(target: LatLng(0.0, 0.0)),
+            initialCameraPosition: CameraPosition(target: LatLng(0.0, 0.0)),
             textDirection: TextDirection.ltr,
-          ),
-          isA<Text>(),
-        );
-      },
-    );
-
-    test(
-      'default implementation of `buildViewWithConfiguration` delegates to `buildViewWithTextDirection`',
-      () {
-        final GoogleMapsFlutterPlatform platform =
-            BuildViewGoogleMapsFlutterPlatform();
-        expect(
-          platform.buildViewWithConfiguration(
-            0,
-            (_) {},
-            widgetConfiguration: const MapWidgetConfiguration(
-              initialCameraPosition: CameraPosition(target: LatLng(0.0, 0.0)),
-              textDirection: TextDirection.ltr,
-            ),
           ),
           isA<Text>(),
         );

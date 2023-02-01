@@ -11,40 +11,6 @@ typedef DebugCreateMapFunction = gmaps.GMap Function(
 
 /// Encapsulates a [gmaps.GMap], its events, and where in the DOM it's rendered.
 class GoogleMapController {
-  /// Initializes the GMap, and the sub-controllers related to it. Wires events.
-  GoogleMapController({
-    required int mapId,
-    required StreamController<MapEvent<Object?>> streamController,
-    required MapWidgetConfiguration widgetConfiguration,
-    MapObjects mapObjects = const MapObjects(),
-    MapConfiguration mapConfiguration = const MapConfiguration(),
-  })  : _mapId = mapId,
-        _streamController = streamController,
-        _initialCameraPosition = widgetConfiguration.initialCameraPosition,
-        _markers = mapObjects.markers,
-        _polygons = mapObjects.polygons,
-        _polylines = mapObjects.polylines,
-        _circles = mapObjects.circles,
-        _lastMapConfiguration = mapConfiguration {
-    _circlesController = CirclesController(stream: _streamController);
-    _polygonsController = PolygonsController(stream: _streamController);
-    _polylinesController = PolylinesController(stream: _streamController);
-    _markersController = MarkersController(stream: _streamController);
-
-    // Register the view factory that will hold the `_div` that holds the map in the DOM.
-    // The `_div` needs to be created outside of the ViewFactory (and cached!) so we can
-    // use it to create the [gmaps.GMap] in the `init()` method of this class.
-    _div = DivElement()
-      ..id = _getViewType(mapId)
-      ..style.width = '100%'
-      ..style.height = '100%';
-
-    ui.platformViewRegistry.registerViewFactory(
-      _getViewType(mapId),
-      (int viewId) => _div,
-    );
-  }
-
   // The internal ID of the map. Used to broadcast events, DOM IDs and everything where a unique ID is needed.
   final int _mapId;
 
@@ -53,10 +19,9 @@ class GoogleMapController {
   final Set<Polygon> _polygons;
   final Set<Polyline> _polylines;
   final Set<Circle> _circles;
-  // The configuraiton passed by the user, before converting to gmaps.
+  // The raw options passed by the user, before converting to gmaps.
   // Caching this allows us to re-create the map faithfully when needed.
-  MapConfiguration _lastMapConfiguration = const MapConfiguration();
-  List<gmaps.MapTypeStyle> _lastStyles = const <gmaps.MapTypeStyle>[];
+  Map<String, dynamic> _rawMapOptions = <String, dynamic>{};
 
   // Creates the 'viewType' for the _widget
   String _getViewType(int mapId) => 'plugins.flutter.io/google_maps_$mapId';
@@ -86,14 +51,14 @@ class GoogleMapController {
   gmaps.GMap? _googleMap;
 
   // The StreamController used by this controller and the geometry ones.
-  final StreamController<MapEvent<Object?>> _streamController;
+  final StreamController<MapEvent> _streamController;
 
   /// The StreamController for the events of this Map. Only for integration testing.
   @visibleForTesting
-  StreamController<MapEvent<Object?>> get stream => _streamController;
+  StreamController<MapEvent> get stream => _streamController;
 
   /// The Stream over which this controller broadcasts events.
-  Stream<MapEvent<Object?>> get events => _streamController.stream;
+  Stream<MapEvent> get events => _streamController.stream;
 
   // Geometry controllers, for different features of the map.
   CirclesController? _circlesController;
@@ -105,6 +70,46 @@ class GoogleMapController {
 
   // Keeps track if the map is moving or not.
   bool _mapIsMoving = false;
+
+  /// Initializes the GMap, and the sub-controllers related to it. Wires events.
+  GoogleMapController({
+    required int mapId,
+    required StreamController<MapEvent> streamController,
+    required CameraPosition initialCameraPosition,
+    Set<Marker> markers = const <Marker>{},
+    Set<Polygon> polygons = const <Polygon>{},
+    Set<Polyline> polylines = const <Polyline>{},
+    Set<Circle> circles = const <Circle>{},
+    Set<TileOverlay> tileOverlays = const <TileOverlay>{},
+    Set<Factory<OneSequenceGestureRecognizer>> gestureRecognizers =
+        const <Factory<OneSequenceGestureRecognizer>>{},
+    Map<String, dynamic> mapOptions = const <String, dynamic>{},
+  })  : _mapId = mapId,
+        _streamController = streamController,
+        _initialCameraPosition = initialCameraPosition,
+        _markers = markers,
+        _polygons = polygons,
+        _polylines = polylines,
+        _circles = circles,
+        _rawMapOptions = mapOptions {
+    _circlesController = CirclesController(stream: this._streamController);
+    _polygonsController = PolygonsController(stream: this._streamController);
+    _polylinesController = PolylinesController(stream: this._streamController);
+    _markersController = MarkersController(stream: this._streamController);
+
+    // Register the view factory that will hold the `_div` that holds the map in the DOM.
+    // The `_div` needs to be created outside of the ViewFactory (and cached!) so we can
+    // use it to create the [gmaps.GMap] in the `init()` method of this class.
+    _div = DivElement()
+      ..id = _getViewType(mapId)
+      ..style.width = '100%'
+      ..style.height = '100%';
+
+    ui.platformViewRegistry.registerViewFactory(
+      _getViewType(mapId),
+      (int viewId) => _div,
+    );
+  }
 
   /// Overrides certain properties to install mocks defined during testing.
   @visibleForTesting
@@ -156,13 +161,12 @@ class GoogleMapController {
   /// Failure to call this method would result in the GMap not rendering at all,
   /// and most of the public methods on this class no-op'ing.
   void init() {
-    gmaps.MapOptions options = _configurationAndStyleToGmapsOptions(
-        _lastMapConfiguration, _lastStyles);
+    var options = _rawOptionsToGmapsOptions(_rawMapOptions);
     // Initial position can only to be set here!
     options = _applyInitialPosition(_initialCameraPosition, options);
 
     // Create the map...
-    final gmaps.GMap map = _createMap(_div, options);
+    final map = _createMap(_div, options);
     _googleMap = map;
 
     _attachMapEvents(map);
@@ -176,28 +180,28 @@ class GoogleMapController {
       polylines: _polylines,
     );
 
-    _setTrafficLayer(map, _lastMapConfiguration.trafficEnabled ?? false);
+    _setTrafficLayer(map, _isTrafficLayerEnabled(_rawMapOptions));
   }
 
   // Funnels map gmap events into the plugin's stream controller.
   void _attachMapEvents(gmaps.GMap map) {
-    map.onTilesloaded.first.then((void _) {
+    map.onTilesloaded.first.then((event) {
       // Report the map as ready to go the first time the tiles load
       _streamController.add(WebMapReadyEvent(_mapId));
     });
-    map.onClick.listen((gmaps.IconMouseEvent event) {
+    map.onClick.listen((event) {
       assert(event.latLng != null);
       _streamController.add(
         MapTapEvent(_mapId, _gmLatLngToLatLng(event.latLng!)),
       );
     });
-    map.onRightclick.listen((gmaps.MapMouseEvent event) {
+    map.onRightclick.listen((event) {
       assert(event.latLng != null);
       _streamController.add(
         MapLongPressEvent(_mapId, _gmLatLngToLatLng(event.latLng!)),
       );
     });
-    map.onBoundsChanged.listen((void _) {
+    map.onBoundsChanged.listen((event) {
       if (!_mapIsMoving) {
         _mapIsMoving = true;
         _streamController.add(CameraMoveStartedEvent(_mapId));
@@ -206,7 +210,7 @@ class GoogleMapController {
         CameraMoveEvent(_mapId, _gmViewportToCameraPosition(map)),
       );
     });
-    map.onIdle.listen((void _) {
+    map.onIdle.listen((event) {
       _mapIsMoving = false;
       _streamController.add(CameraIdleEvent(_mapId));
     });
@@ -239,15 +243,15 @@ class GoogleMapController {
 
   // Renders the initial sets of geometry.
   void _renderInitialGeometry({
-    Set<Marker> markers = const <Marker>{},
-    Set<Circle> circles = const <Circle>{},
-    Set<Polygon> polygons = const <Polygon>{},
-    Set<Polyline> polylines = const <Polyline>{},
+    Set<Marker> markers = const {},
+    Set<Circle> circles = const {},
+    Set<Polygon> polygons = const {},
+    Set<Polyline> polylines = const {},
   }) {
     assert(
         _controllersBoundToMap,
-        'Geometry controllers must be bound to a map before any geometry can '
-        'be added to them. Ensure _attachGeometryControllers is called first.');
+        'Geometry controllers must be bound to a map before any geometry can ' +
+            'be added to them. Ensure _attachGeometryControllers is called first.');
 
     // The above assert will only succeed if the controllers have been bound to a map
     // in the [_attachGeometryControllers] method, which ensures that all these
@@ -259,37 +263,30 @@ class GoogleMapController {
     _polylinesController!.addPolylines(polylines);
   }
 
-  // Merges new options coming from the plugin into _lastConfiguration.
+  // Merges new options coming from the plugin into the _rawMapOptions map.
   //
-  // Returns the updated _lastConfiguration object.
-  MapConfiguration _mergeConfigurations(MapConfiguration update) {
-    _lastMapConfiguration = _lastMapConfiguration.applyDiff(update);
-    return _lastMapConfiguration;
+  // Returns the updated _rawMapOptions object.
+  Map<String, dynamic> _mergeRawOptions(Map<String, dynamic> newOptions) {
+    _rawMapOptions = <String, dynamic>{
+      ..._rawMapOptions,
+      ...newOptions,
+    };
+    return _rawMapOptions;
   }
 
-  /// Updates the map options from a [MapConfiguration].
+  /// Updates the map options from a `Map<String, dynamic>`.
   ///
-  /// This method converts the map into the proper [gmaps.MapOptions].
-  void updateMapConfiguration(MapConfiguration update) {
+  /// This method converts the map into the proper [gmaps.MapOptions]
+  void updateRawOptions(Map<String, dynamic> optionsUpdate) {
     assert(_googleMap != null, 'Cannot update options on a null map.');
 
-    final MapConfiguration newConfiguration = _mergeConfigurations(update);
-    final gmaps.MapOptions newOptions =
-        _configurationAndStyleToGmapsOptions(newConfiguration, _lastStyles);
+    final newOptions = _mergeRawOptions(optionsUpdate);
 
-    _setOptions(newOptions);
-    _setTrafficLayer(_googleMap!, newConfiguration.trafficEnabled ?? false);
-  }
-
-  /// Updates the map options with a new list of [styles].
-  void updateStyles(List<gmaps.MapTypeStyle> styles) {
-    _lastStyles = styles;
-    _setOptions(
-        _configurationAndStyleToGmapsOptions(_lastMapConfiguration, styles));
+    _setOptions(_rawOptionsToGmapsOptions(newOptions));
+    _setTrafficLayer(_googleMap!, _isTrafficLayerEnabled(newOptions));
   }
 
   // Sets new [gmaps.MapOptions] on the wrapped map.
-  // ignore: use_setters_to_change_properties
   void _setOptions(gmaps.MapOptions options) {
     _googleMap?.options = options;
   }
@@ -312,11 +309,9 @@ class GoogleMapController {
   Future<LatLngBounds> getVisibleRegion() async {
     assert(_googleMap != null, 'Cannot get the visible region of a null map.');
 
-    final gmaps.LatLngBounds bounds =
-        await Future<gmaps.LatLngBounds?>.value(_googleMap!.bounds) ??
-            _nullGmapsLatLngBounds;
-
-    return _gmLatLngBoundsTolatLngBounds(bounds);
+    return _gmLatLngBoundsTolatLngBounds(
+      await _googleMap!.bounds ?? _nullGmapsLatLngBounds,
+    );
   }
 
   /// Returns the [ScreenCoordinate] for a given viewport [LatLng].
@@ -324,8 +319,7 @@ class GoogleMapController {
     assert(_googleMap != null,
         'Cannot get the screen coordinates with a null map.');
 
-    final gmaps.Point point =
-        toScreenLocation(_googleMap!, _latLngToGmLatLng(latLng));
+    final point = toScreenLocation(_googleMap!, _latLngToGmLatLng(latLng));
 
     return ScreenCoordinate(x: point.x!.toInt(), y: point.y!.toInt());
   }
@@ -430,8 +424,8 @@ class GoogleMapController {
   }
 }
 
-/// A MapEvent event fired when a [mapId] on web is interactive.
-class WebMapReadyEvent extends MapEvent<Object?> {
+/// An event fired when a [mapId] on web is interactive.
+class WebMapReadyEvent extends MapEvent<void> {
   /// Build a WebMapReady Event for the map represented by `mapId`.
   WebMapReadyEvent(int mapId) : super(mapId, null);
 }

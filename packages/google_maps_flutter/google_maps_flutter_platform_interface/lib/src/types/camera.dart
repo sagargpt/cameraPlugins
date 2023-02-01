@@ -2,9 +2,7 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-import 'dart:ui' show Offset;
-
-import 'package:flutter/foundation.dart';
+import 'dart:ui' show hashValues, Offset;
 
 import 'types.dart';
 
@@ -12,7 +10,6 @@ import 'types.dart';
 ///
 /// Aggregates the camera's [target] geographical location, its [zoom] level,
 /// [tilt] angle, and [bearing].
-@immutable
 class CameraPosition {
   /// Creates a immutable representation of the [GoogleMap] camera.
   ///
@@ -75,7 +72,7 @@ class CameraPosition {
   ///
   /// Mainly for internal use.
   static CameraPosition? fromMap(Object? json) {
-    if (json == null || json is! Map<dynamic, dynamic>) {
+    if (json == null || !(json is Map<dynamic, dynamic>)) {
       return null;
     }
     final LatLng? target = LatLng.fromJson(json['target']);
@@ -83,30 +80,26 @@ class CameraPosition {
       return null;
     }
     return CameraPosition(
-      bearing: json['bearing'] as double,
+      bearing: json['bearing'],
       target: target,
-      tilt: json['tilt'] as double,
-      zoom: json['zoom'] as double,
+      tilt: json['tilt'],
+      zoom: json['zoom'],
     );
   }
 
   @override
   bool operator ==(Object other) {
-    if (identical(this, other)) {
-      return true;
-    }
-    if (runtimeType != other.runtimeType) {
-      return false;
-    }
-    return other is CameraPosition &&
-        bearing == other.bearing &&
-        target == other.target &&
-        tilt == other.tilt &&
-        zoom == other.zoom;
+    if (identical(this, other)) return true;
+    if (runtimeType != other.runtimeType) return false;
+    final CameraPosition typedOther = other as CameraPosition;
+    return bearing == typedOther.bearing &&
+        target == typedOther.target &&
+        tilt == typedOther.tilt &&
+        zoom == typedOther.zoom;
   }
 
   @override
-  int get hashCode => Object.hash(bearing, target, tilt, zoom);
+  int get hashCode => hashValues(bearing, target, tilt, zoom);
 
   @override
   String toString() =>

@@ -4,10 +4,10 @@
 
 import 'dart:async';
 
-import 'package:flutter_test/flutter_test.dart';
+import 'package:integration_test/integration_test.dart';
 import 'package:google_maps/google_maps.dart' as gmaps;
 import 'package:google_maps_flutter_web/google_maps_flutter_web.dart';
-import 'package:integration_test/integration_test.dart';
+import 'package:flutter_test/flutter_test.dart';
 
 /// Test Shapes (Circle, Polygon, Polyline)
 void main() {
@@ -15,20 +15,20 @@ void main() {
 
   // Since onTap events happen asynchronously, we need to store when the event
   // is fired. We use a completer so the test can wait for the future to be completed.
-  late Completer<bool> methodCalledCompleter;
+  late Completer<bool> _methodCalledCompleter;
 
-  /// This is the future value of the [methodCalledCompleter]. Reinitialized
+  /// This is the future value of the [_methodCalledCompleter]. Reinitialized
   /// in the [setUp] method, and completed (as `true`) by [onTap], when it gets
   /// called by the corresponding Shape Controller.
   late Future<bool> methodCalled;
 
   void onTap() {
-    methodCalledCompleter.complete(true);
+    _methodCalledCompleter.complete(true);
   }
 
   setUp(() {
-    methodCalledCompleter = Completer<bool>();
-    methodCalled = methodCalledCompleter.future;
+    _methodCalledCompleter = Completer();
+    methodCalled = _methodCalledCompleter.future;
   });
 
   group('CircleController', () {
@@ -42,16 +42,15 @@ void main() {
       CircleController(circle: circle, consumeTapEvents: true, onTap: onTap);
 
       // Trigger a click event...
-      gmaps.Event.trigger(circle, 'click', <Object?>[gmaps.MapMouseEvent()]);
+      gmaps.Event.trigger(circle, 'click', [gmaps.MapMouseEvent()]);
 
       // The event handling is now truly async. Wait for it...
       expect(await methodCalled, isTrue);
     });
 
     testWidgets('update', (WidgetTester tester) async {
-      final CircleController controller = CircleController(circle: circle);
-      final gmaps.CircleOptions options = gmaps.CircleOptions()
-        ..draggable = true;
+      final controller = CircleController(circle: circle);
+      final options = gmaps.CircleOptions()..draggable = true;
 
       expect(circle.draggable, isNull);
 
@@ -75,8 +74,7 @@ void main() {
 
       testWidgets('cannot call update after remove',
           (WidgetTester tester) async {
-        final gmaps.CircleOptions options = gmaps.CircleOptions()
-          ..draggable = true;
+        final options = gmaps.CircleOptions()..draggable = true;
 
         controller.remove();
 
@@ -98,16 +96,15 @@ void main() {
       PolygonController(polygon: polygon, consumeTapEvents: true, onTap: onTap);
 
       // Trigger a click event...
-      gmaps.Event.trigger(polygon, 'click', <Object?>[gmaps.MapMouseEvent()]);
+      gmaps.Event.trigger(polygon, 'click', [gmaps.MapMouseEvent()]);
 
       // The event handling is now truly async. Wait for it...
       expect(await methodCalled, isTrue);
     });
 
     testWidgets('update', (WidgetTester tester) async {
-      final PolygonController controller = PolygonController(polygon: polygon);
-      final gmaps.PolygonOptions options = gmaps.PolygonOptions()
-        ..draggable = true;
+      final controller = PolygonController(polygon: polygon);
+      final options = gmaps.PolygonOptions()..draggable = true;
 
       expect(polygon.draggable, isNull);
 
@@ -131,8 +128,7 @@ void main() {
 
       testWidgets('cannot call update after remove',
           (WidgetTester tester) async {
-        final gmaps.PolygonOptions options = gmaps.PolygonOptions()
-          ..draggable = true;
+        final options = gmaps.PolygonOptions()..draggable = true;
 
         controller.remove();
 
@@ -152,24 +148,18 @@ void main() {
 
     testWidgets('onTap gets called', (WidgetTester tester) async {
       PolylineController(
-        polyline: polyline,
-        consumeTapEvents: true,
-        onTap: onTap,
-      );
+          polyline: polyline, consumeTapEvents: true, onTap: onTap);
 
       // Trigger a click event...
-      gmaps.Event.trigger(polyline, 'click', <Object?>[gmaps.MapMouseEvent()]);
+      gmaps.Event.trigger(polyline, 'click', [gmaps.MapMouseEvent()]);
 
       // The event handling is now truly async. Wait for it...
       expect(await methodCalled, isTrue);
     });
 
     testWidgets('update', (WidgetTester tester) async {
-      final PolylineController controller = PolylineController(
-        polyline: polyline,
-      );
-      final gmaps.PolylineOptions options = gmaps.PolylineOptions()
-        ..draggable = true;
+      final controller = PolylineController(polyline: polyline);
+      final options = gmaps.PolylineOptions()..draggable = true;
 
       expect(polyline.draggable, isNull);
 
@@ -193,8 +183,7 @@ void main() {
 
       testWidgets('cannot call update after remove',
           (WidgetTester tester) async {
-        final gmaps.PolylineOptions options = gmaps.PolylineOptions()
-          ..draggable = true;
+        final options = gmaps.PolylineOptions()..draggable = true;
 
         controller.remove();
 

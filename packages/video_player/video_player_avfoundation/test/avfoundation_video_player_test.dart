@@ -2,8 +2,6 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-// TODO(a14n): remove this import once Flutter 3.1 or later reaches stable (including flutter/flutter#106316)
-// ignore: unnecessary_import
 import 'dart:ui';
 
 import 'package:flutter/services.dart';
@@ -12,7 +10,7 @@ import 'package:video_player_avfoundation/src/messages.g.dart';
 import 'package:video_player_avfoundation/video_player_avfoundation.dart';
 import 'package:video_player_platform_interface/video_player_platform_interface.dart';
 
-import 'test_api.g.dart';
+import 'test_api.dart';
 
 class _ApiLogger implements TestHostVideoPlayerApi {
   final List<String> log = <String>[];
@@ -320,7 +318,7 @@ void main() {
                 eventType: VideoEventType.bufferingUpdate,
                 buffered: <DurationRange>[
                   DurationRange(
-                    Duration.zero,
+                    const Duration(milliseconds: 0),
                     const Duration(milliseconds: 1234),
                   ),
                   DurationRange(
@@ -339,4 +337,5 @@ void main() {
 ///
 /// We use this so that APIs that have become non-nullable can still be used
 /// with `!` and `?` on the stable branch.
+// TODO(ianh): Remove this once we roll stable in late 2021.
 T? _ambiguate<T>(T? value) => value;

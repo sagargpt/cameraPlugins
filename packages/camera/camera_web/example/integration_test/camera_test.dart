@@ -53,7 +53,7 @@ void main() {
     });
 
     setUpAll(() {
-      registerFallbackValue(MockCameraOptions());
+      registerFallbackValue<CameraOptions>(MockCameraOptions());
     });
 
     group('initialize', () {
@@ -1286,10 +1286,11 @@ void main() {
             capturedVideoPartTwo,
           ];
 
-          videoDataAvailableListener(FakeBlobEvent(capturedVideoPartOne));
-          videoDataAvailableListener(FakeBlobEvent(capturedVideoPartTwo));
+          videoDataAvailableListener
+            ..call(FakeBlobEvent(capturedVideoPartOne))
+            ..call(FakeBlobEvent(capturedVideoPartTwo));
 
-          videoRecordingStoppedListener(Event('stop'));
+          videoRecordingStoppedListener.call(Event('stop'));
 
           final XFile videoFile = await videoFileFuture;
 
@@ -1377,7 +1378,7 @@ void main() {
 
           when(() => mediaRecorder.state).thenReturn('recording');
 
-          videoDataAvailableListener(FakeBlobEvent(Blob(<Object>[])));
+          videoDataAvailableListener.call(FakeBlobEvent(Blob(<Object>[])));
 
           await Future<void>.microtask(() {});
 
@@ -1411,7 +1412,7 @@ void main() {
 
           await camera.startVideoRecording();
 
-          videoRecordingStoppedListener(Event('stop'));
+          videoRecordingStoppedListener.call(Event('stop'));
 
           await Future<void>.microtask(() {});
 
@@ -1434,7 +1435,7 @@ void main() {
 
           await camera.startVideoRecording();
 
-          videoRecordingStoppedListener(Event('stop'));
+          videoRecordingStoppedListener.call(Event('stop'));
 
           await Future<void>.microtask(() {});
 
@@ -1463,7 +1464,7 @@ void main() {
 
           await camera.startVideoRecording();
 
-          videoRecordingStoppedListener(Event('stop'));
+          videoRecordingStoppedListener.call(Event('stop'));
 
           await Future<void>.microtask(() {});
 
@@ -1476,7 +1477,7 @@ void main() {
     });
 
     group('dispose', () {
-      testWidgets("resets the video element's source",
+      testWidgets('resets the video element\'s source',
           (WidgetTester tester) async {
         final Camera camera = Camera(
           textureId: textureId,
@@ -1587,8 +1588,8 @@ void main() {
             return finalVideo!;
           };
 
-          videoDataAvailableListener(FakeBlobEvent(Blob(<Object>[])));
-          videoRecordingStoppedListener(Event('stop'));
+          videoDataAvailableListener.call(FakeBlobEvent(Blob(<Object>[])));
+          videoRecordingStoppedListener.call(Event('stop'));
 
           expect(
             await streamQueue.next,

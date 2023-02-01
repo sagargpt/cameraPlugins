@@ -1,28 +1,3 @@
-## NEXT
-
-* Updates minimum Flutter version to 3.0.
-
-## 2.0.17
-
-* Updates code for stricter lint checks.
-
-## 2.0.16
-
-* Switches to the new `shared_preferences_foundation` implementation package
-  for iOS and macOS.
-* Updates code for `no_leading_underscores_for_local_identifiers` lint.
-* Updates minimum Flutter version to 2.10.
-
-## 2.0.15
-
-* Minor fixes for new analysis options.
-
-## 2.0.14
-
-* Adds OS version support information to README.
-* Fixes library_private_types_in_public_api, sort_child_properties_last and use_key_in_widget_constructors
-  lint warnings.
-
 ## 2.0.13
 
 * Updates documentation on README.md.

@@ -6,7 +6,7 @@ import 'package:pigeon/pigeon.dart';
 
 @ConfigurePigeon(PigeonOptions(
   dartOut: 'lib/src/messages.g.dart',
-  dartTestOut: 'test/test_api.g.dart',
+  dartTestOut: 'test/test_api.dart',
   objcHeaderOut: 'ios/Classes/messages.g.h',
   objcSourceOut: 'ios/Classes/messages.g.m',
   objcOptions: ObjcOptions(
@@ -58,7 +58,7 @@ class MixWithOthersMessage {
 }
 
 @HostApi(dartHostTestHandler: 'TestHostVideoPlayerApi')
-abstract class AVFoundationVideoPlayerApi {
+abstract class VideoPlayerApi {
   @ObjCSelector('initialize')
   void initialize();
   @ObjCSelector('create:')

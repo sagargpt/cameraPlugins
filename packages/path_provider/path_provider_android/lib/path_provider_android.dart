@@ -2,40 +2,16 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
-import 'messages.g.dart' as messages;
-
-messages.StorageDirectory _convertStorageDirectory(
-    StorageDirectory? directory) {
-  switch (directory) {
-    case null:
-      return messages.StorageDirectory.root;
-    case StorageDirectory.music:
-      return messages.StorageDirectory.music;
-    case StorageDirectory.podcasts:
-      return messages.StorageDirectory.podcasts;
-    case StorageDirectory.ringtones:
-      return messages.StorageDirectory.ringtones;
-    case StorageDirectory.alarms:
-      return messages.StorageDirectory.alarms;
-    case StorageDirectory.notifications:
-      return messages.StorageDirectory.notifications;
-    case StorageDirectory.pictures:
-      return messages.StorageDirectory.pictures;
-    case StorageDirectory.movies:
-      return messages.StorageDirectory.movies;
-    case StorageDirectory.downloads:
-      return messages.StorageDirectory.downloads;
-    case StorageDirectory.dcim:
-      return messages.StorageDirectory.dcim;
-    case StorageDirectory.documents:
-      return messages.StorageDirectory.documents;
-  }
-}
 
 /// The Android implementation of [PathProviderPlatform].
 class PathProviderAndroid extends PathProviderPlatform {
-  final messages.PathProviderApi _api = messages.PathProviderApi();
+  /// The method channel used to interact with the native platform.
+  @visibleForTesting
+  MethodChannel methodChannel =
+      const MethodChannel('plugins.flutter.io/path_provider');
 
   /// Registers this class as the default instance of [PathProviderPlatform].
   static void registerWith() {
@@ -44,12 +20,12 @@ class PathProviderAndroid extends PathProviderPlatform {
 
   @override
   Future<String?> getTemporaryPath() {
-    return _api.getTemporaryPath();
+    return methodChannel.invokeMethod<String>('getTemporaryDirectory');
   }
 
   @override
   Future<String?> getApplicationSupportPath() {
-    return _api.getApplicationSupportPath();
+    return methodChannel.invokeMethod<String>('getApplicationSupportDirectory');
   }
 
   @override
@@ -59,25 +35,29 @@ class PathProviderAndroid extends PathProviderPlatform {
 
   @override
   Future<String?> getApplicationDocumentsPath() {
-    return _api.getApplicationDocumentsPath();
+    return methodChannel
+        .invokeMethod<String>('getApplicationDocumentsDirectory');
   }
 
   @override
   Future<String?> getExternalStoragePath() {
-    return _api.getExternalStoragePath();
+    return methodChannel.invokeMethod<String>('getStorageDirectory');
   }
 
   @override
-  Future<List<String>?> getExternalCachePaths() async {
-    return (await _api.getExternalCachePaths()).cast<String>();
+  Future<List<String>?> getExternalCachePaths() {
+    return methodChannel
+        .invokeListMethod<String>('getExternalCacheDirectories');
   }
 
   @override
   Future<List<String>?> getExternalStoragePaths({
     StorageDirectory? type,
   }) async {
-    return (await _api.getExternalStoragePaths(_convertStorageDirectory(type)))
-        .cast<String>();
+    return methodChannel.invokeListMethod<String>(
+      'getExternalStorageDirectories',
+      <String, dynamic>{'type': type?.index},
+    );
   }
 
   @override

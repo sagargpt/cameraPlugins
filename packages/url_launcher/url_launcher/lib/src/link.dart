@@ -6,11 +6,9 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:url_launcher_platform_interface/link.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
-
-import 'types.dart';
-import 'url_launcher_uri.dart';
 
 /// The function used to push routes to the Flutter framework.
 @visibleForTesting
@@ -86,7 +84,7 @@ class Link extends StatelessWidget implements LinkInfo {
 /// event channel messages to instruct the framework to push the route name.
 class DefaultLinkDelegate extends StatelessWidget {
   /// Creates a delegate for the given [link].
-  const DefaultLinkDelegate(this.link, {Key? key}) : super(key: key);
+  const DefaultLinkDelegate(this.link);
 
   /// Given a [link], creates an instance of [DefaultLinkDelegate].
   ///
@@ -109,8 +107,7 @@ class DefaultLinkDelegate extends StatelessWidget {
   }
 
   Future<void> _followLink(BuildContext context) async {
-    final Uri url = link.uri!;
-    if (!url.hasScheme) {
+    if (!link.uri!.hasScheme) {
       // A uri that doesn't have a scheme is an internal route name. In this
       // case, we push it via Flutter's navigation system instead of letting the
       // browser handle it.
@@ -119,18 +116,18 @@ class DefaultLinkDelegate extends StatelessWidget {
       return;
     }
 
-    // At this point, we know that the link is external. So we use the
-    // `launchUrl` API to open the link.
-    if (await canLaunchUrl(url)) {
-      await launchUrl(
-        url,
-        mode: _useWebView
-            ? LaunchMode.inAppWebView
-            : LaunchMode.externalApplication,
+    // At this point, we know that the link is external. So we use the `launch`
+    // API to open the link.
+    final String urlString = link.uri.toString();
+    if (await canLaunch(urlString)) {
+      await launch(
+        urlString,
+        forceSafariVC: _useWebView,
+        forceWebView: _useWebView,
       );
     } else {
       FlutterError.reportError(FlutterErrorDetails(
-        exception: 'Could not launch link $url',
+        exception: 'Could not launch link $urlString',
         stack: StackTrace.current,
         library: 'url_launcher',
         context: ErrorDescription('during launching a link'),

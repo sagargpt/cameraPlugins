@@ -32,7 +32,7 @@ class CameraErrorCode {
   /// The camera cannot be used or the permission
   /// to access the camera is not granted.
   static const CameraErrorCode permissionDenied =
-      CameraErrorCode._('CameraAccessDenied');
+      CameraErrorCode._('cameraPermission');
 
   /// The camera options are incorrect or attempted
   /// to access the media input from an insecure context.

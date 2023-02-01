@@ -33,13 +33,13 @@ void main() {
     widgets.WidgetsFlutterBinding.ensureInitialized();
 
     const String debugMessage = 'dummy message';
-    const BillingResponse responseCode = BillingResponse.ok;
-    const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+    final BillingResponse responseCode = BillingResponse.ok;
+    final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
         responseCode: responseCode, debugMessage: debugMessage);
     stubPlatform.addResponse(
         name: startConnectionCall,
         value: buildBillingResultMap(expectedBillingResult));
-    stubPlatform.addResponse(name: endConnectionCall);
+    stubPlatform.addResponse(name: endConnectionCall, value: null);
 
     InAppPurchaseAndroidPlatform.registerPlatform();
     iapAndroidPlatform =
@@ -70,28 +70,28 @@ void main() {
   });
 
   group('querySkuDetails', () {
-    const String queryMethodName =
+    final String queryMethodName =
         'BillingClient#querySkuDetailsAsync(SkuDetailsParams, SkuDetailsResponseListener)';
 
     test('handles empty skuDetails', () async {
       const String debugMessage = 'dummy message';
-      const BillingResponse responseCode = BillingResponse.ok;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse responseCode = BillingResponse.ok;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: responseCode, debugMessage: debugMessage);
       stubPlatform.addResponse(name: queryMethodName, value: <String, dynamic>{
         'billingResult': buildBillingResultMap(expectedBillingResult),
-        'skuDetailsList': <Map<String, dynamic>>[],
+        'skuDetailsList': [],
       });
 
       final ProductDetailsResponse response =
-          await iapAndroidPlatform.queryProductDetails(<String>{''});
+          await iapAndroidPlatform.queryProductDetails(<String>[''].toSet());
       expect(response.productDetails, isEmpty);
     });
 
     test('should get correct product details', () async {
       const String debugMessage = 'dummy message';
-      const BillingResponse responseCode = BillingResponse.ok;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse responseCode = BillingResponse.ok;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: responseCode, debugMessage: debugMessage);
       stubPlatform.addResponse(name: queryMethodName, value: <String, dynamic>{
         'billingResult': buildBillingResultMap(expectedBillingResult),
@@ -99,8 +99,8 @@ void main() {
       });
       // Since queryProductDetails makes 2 platform method calls (one for each SkuType), the result will contain 2 dummyWrapper instead
       // of 1.
-      final ProductDetailsResponse response =
-          await iapAndroidPlatform.queryProductDetails(<String>{'valid'});
+      final ProductDetailsResponse response = await iapAndroidPlatform
+          .queryProductDetails(<String>['valid'].toSet());
       expect(response.productDetails.first.title, dummySkuDetails.title);
       expect(response.productDetails.first.description,
           dummySkuDetails.description);
@@ -110,8 +110,8 @@ void main() {
 
     test('should get the correct notFoundIDs', () async {
       const String debugMessage = 'dummy message';
-      const BillingResponse responseCode = BillingResponse.ok;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse responseCode = BillingResponse.ok;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: responseCode, debugMessage: debugMessage);
       stubPlatform.addResponse(name: queryMethodName, value: <String, dynamic>{
         'billingResult': buildBillingResultMap(expectedBillingResult),
@@ -119,42 +119,41 @@ void main() {
       });
       // Since queryProductDetails makes 2 platform method calls (one for each SkuType), the result will contain 2 dummyWrapper instead
       // of 1.
-      final ProductDetailsResponse response =
-          await iapAndroidPlatform.queryProductDetails(<String>{'invalid'});
+      final ProductDetailsResponse response = await iapAndroidPlatform
+          .queryProductDetails(<String>['invalid'].toSet());
       expect(response.notFoundIDs.first, 'invalid');
     });
 
     test(
         'should have error stored in the response when platform exception is thrown',
         () async {
-      const BillingResponse responseCode = BillingResponse.ok;
+      final BillingResponse responseCode = BillingResponse.ok;
       stubPlatform.addResponse(
           name: queryMethodName,
           value: <String, dynamic>{
-            'responseCode':
-                const BillingResponseConverter().toJson(responseCode),
+            'responseCode': BillingResponseConverter().toJson(responseCode),
             'skuDetailsList': <Map<String, dynamic>>[
               buildSkuMap(dummySkuDetails)
             ]
           },
-          additionalStepBeforeReturn: (dynamic _) {
+          additionalStepBeforeReturn: (_) {
             throw PlatformException(
               code: 'error_code',
               message: 'error_message',
-              details: <dynamic, dynamic>{'info': 'error_info'},
+              details: {'info': 'error_info'},
             );
           });
       // Since queryProductDetails makes 2 platform method calls (one for each SkuType), the result will contain 2 dummyWrapper instead
       // of 1.
-      final ProductDetailsResponse response =
-          await iapAndroidPlatform.queryProductDetails(<String>{'invalid'});
-      expect(response.notFoundIDs, <String>['invalid']);
+      final ProductDetailsResponse response = await iapAndroidPlatform
+          .queryProductDetails(<String>['invalid'].toSet());
+      expect(response.notFoundIDs, ['invalid']);
       expect(response.productDetails, isEmpty);
       expect(response.error, isNotNull);
       expect(response.error!.source, kIAPSource);
       expect(response.error!.code, 'error_code');
       expect(response.error!.message, 'error_message');
-      expect(response.error!.details, <String, dynamic>{'info': 'error_info'});
+      expect(response.error!.details, {'info': 'error_info'});
     });
   });
 
@@ -162,13 +161,13 @@ void main() {
     const String queryMethodName = 'BillingClient#queryPurchases(String)';
     test('handles error', () async {
       const String debugMessage = 'dummy message';
-      const BillingResponse responseCode = BillingResponse.developerError;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse responseCode = BillingResponse.developerError;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: responseCode, debugMessage: debugMessage);
 
       stubPlatform.addResponse(name: queryMethodName, value: <dynamic, dynamic>{
         'billingResult': buildBillingResultMap(expectedBillingResult),
-        'responseCode': const BillingResponseConverter().toJson(responseCode),
+        'responseCode': BillingResponseConverter().toJson(responseCode),
         'purchasesList': <Map<String, dynamic>>[]
       });
 
@@ -176,12 +175,9 @@ void main() {
         iapAndroidPlatform.restorePurchases(),
         throwsA(
           isA<InAppPurchaseException>()
-              .having(
-                  (InAppPurchaseException e) => e.source, 'source', kIAPSource)
-              .having((InAppPurchaseException e) => e.code, 'code',
-                  kRestoredPurchaseErrorCode)
-              .having((InAppPurchaseException e) => e.message, 'message',
-                  responseCode.toString()),
+              .having((e) => e.source, 'source', kIAPSource)
+              .having((e) => e.code, 'code', kRestoredPurchaseErrorCode)
+              .having((e) => e.message, 'message', responseCode.toString()),
         ),
       );
     });
@@ -189,22 +185,21 @@ void main() {
     test('should store platform exception in the response', () async {
       const String debugMessage = 'dummy message';
 
-      const BillingResponse responseCode = BillingResponse.developerError;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse responseCode = BillingResponse.developerError;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: responseCode, debugMessage: debugMessage);
       stubPlatform.addResponse(
           name: queryMethodName,
           value: <dynamic, dynamic>{
-            'responseCode':
-                const BillingResponseConverter().toJson(responseCode),
+            'responseCode': BillingResponseConverter().toJson(responseCode),
             'billingResult': buildBillingResultMap(expectedBillingResult),
             'purchasesList': <Map<String, dynamic>>[]
           },
-          additionalStepBeforeReturn: (dynamic _) {
+          additionalStepBeforeReturn: (_) {
             throw PlatformException(
               code: 'error_code',
               message: 'error_message',
-              details: <dynamic, dynamic>{'info': 'error_info'},
+              details: {'info': 'error_info'},
             );
           });
 
@@ -212,23 +207,19 @@ void main() {
         iapAndroidPlatform.restorePurchases(),
         throwsA(
           isA<PlatformException>()
-              .having((PlatformException e) => e.code, 'code', 'error_code')
-              .having((PlatformException e) => e.message, 'message',
-                  'error_message')
-              .having((PlatformException e) => e.details, 'details',
-                  <String, dynamic>{'info': 'error_info'}),
+              .having((e) => e.code, 'code', 'error_code')
+              .having((e) => e.message, 'message', 'error_message')
+              .having((e) => e.details, 'details', {'info': 'error_info'}),
         ),
       );
     });
 
     test('returns SkuDetailsResponseWrapper', () async {
-      final Completer<List<PurchaseDetails>> completer =
-          Completer<List<PurchaseDetails>>();
-      final Stream<List<PurchaseDetails>> stream =
-          iapAndroidPlatform.purchaseStream;
+      Completer completer = Completer();
+      Stream<List<PurchaseDetails>> stream = iapAndroidPlatform.purchaseStream;
 
-      late StreamSubscription<List<PurchaseDetails>> subscription;
-      subscription = stream.listen((List<PurchaseDetails> purchaseDetailsList) {
+      late StreamSubscription subscription;
+      subscription = stream.listen((purchaseDetailsList) {
         if (purchaseDetailsList.first.status == PurchaseStatus.restored) {
           completer.complete(purchaseDetailsList);
           subscription.cancel();
@@ -236,13 +227,13 @@ void main() {
       });
 
       const String debugMessage = 'dummy message';
-      const BillingResponse responseCode = BillingResponse.ok;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse responseCode = BillingResponse.ok;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: responseCode, debugMessage: debugMessage);
 
       stubPlatform.addResponse(name: queryMethodName, value: <String, dynamic>{
         'billingResult': buildBillingResultMap(expectedBillingResult),
-        'responseCode': const BillingResponseConverter().toJson(responseCode),
+        'responseCode': BillingResponseConverter().toJson(responseCode),
         'purchasesList': <Map<String, dynamic>>[
           buildPurchaseMap(dummyPurchase),
         ]
@@ -255,8 +246,8 @@ void main() {
       final List<PurchaseDetails> restoredPurchases = await completer.future;
 
       expect(restoredPurchases.length, 2);
-      for (final PurchaseDetails element in restoredPurchases) {
-        final GooglePlayPurchaseDetails purchase =
+      restoredPurchases.forEach((element) {
+        GooglePlayPurchaseDetails purchase =
             element as GooglePlayPurchaseDetails;
 
         expect(purchase.productID, dummyPurchase.sku);
@@ -269,41 +260,40 @@ void main() {
         expect(purchase.transactionDate, dummyPurchase.purchaseTime.toString());
         expect(purchase.billingClientPurchase, dummyPurchase);
         expect(purchase.status, PurchaseStatus.restored);
-      }
+      });
     });
   });
 
   group('make payment', () {
-    const String launchMethodName =
+    final String launchMethodName =
         'BillingClient#launchBillingFlow(Activity, BillingFlowParams)';
     const String consumeMethodName =
         'BillingClient#consumeAsync(String, ConsumeResponseListener)';
 
     test('buy non consumable, serializes and deserializes data', () async {
-      const SkuDetailsWrapper skuDetails = dummySkuDetails;
-      const String accountId = 'hashedAccountId';
+      final SkuDetailsWrapper skuDetails = dummySkuDetails;
+      final String accountId = "hashedAccountId";
       const String debugMessage = 'dummy message';
-      const BillingResponse sentCode = BillingResponse.ok;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse sentCode = BillingResponse.ok;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: sentCode, debugMessage: debugMessage);
 
       stubPlatform.addResponse(
           name: launchMethodName,
           value: buildBillingResultMap(expectedBillingResult),
-          additionalStepBeforeReturn: (dynamic _) {
+          additionalStepBeforeReturn: (_) {
             // Mock java update purchase callback.
-            final MethodCall call =
-                MethodCall(kOnPurchasesUpdated, <dynamic, dynamic>{
+            MethodCall call = MethodCall(kOnPurchasesUpdated, {
               'billingResult': buildBillingResultMap(expectedBillingResult),
-              'responseCode': const BillingResponseConverter().toJson(sentCode),
-              'purchasesList': <dynamic>[
-                <dynamic, dynamic>{
+              'responseCode': BillingResponseConverter().toJson(sentCode),
+              'purchasesList': [
+                {
                   'orderId': 'orderID1',
-                  'skus': <String>[skuDetails.sku],
+                  'sku': skuDetails.sku,
                   'isAutoRenewing': false,
-                  'packageName': 'package',
+                  'packageName': "package",
                   'purchaseTime': 1231231231,
-                  'purchaseToken': 'token',
+                  'purchaseToken': "token",
                   'signature': 'sign',
                   'originalJson': 'json',
                   'developerPayload': 'dummy payload',
@@ -314,11 +304,10 @@ void main() {
             });
             iapAndroidPlatform.billingClient.callHandler(call);
           });
-      final Completer<PurchaseDetails> completer = Completer<PurchaseDetails>();
+      Completer completer = Completer();
       PurchaseDetails purchaseDetails;
-      final Stream<List<PurchaseDetails>> purchaseStream =
-          iapAndroidPlatform.purchaseStream;
-      late StreamSubscription<List<PurchaseDetails>> subscription;
+      Stream purchaseStream = iapAndroidPlatform.purchaseStream;
+      late StreamSubscription subscription;
       subscription = purchaseStream.listen((_) {
         purchaseDetails = _.first;
         completer.complete(purchaseDetails);
@@ -330,7 +319,7 @@ void main() {
       final bool launchResult = await iapAndroidPlatform.buyNonConsumable(
           purchaseParam: purchaseParam);
 
-      final PurchaseDetails result = await completer.future;
+      PurchaseDetails result = await completer.future;
       expect(launchResult, isTrue);
       expect(result.purchaseID, 'orderID1');
       expect(result.status, PurchaseStatus.purchased);
@@ -338,31 +327,29 @@ void main() {
     });
 
     test('handles an error with an empty purchases list', () async {
-      const SkuDetailsWrapper skuDetails = dummySkuDetails;
-      const String accountId = 'hashedAccountId';
+      final SkuDetailsWrapper skuDetails = dummySkuDetails;
+      final String accountId = "hashedAccountId";
       const String debugMessage = 'dummy message';
-      const BillingResponse sentCode = BillingResponse.error;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse sentCode = BillingResponse.error;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: sentCode, debugMessage: debugMessage);
 
       stubPlatform.addResponse(
           name: launchMethodName,
           value: buildBillingResultMap(expectedBillingResult),
-          additionalStepBeforeReturn: (dynamic _) {
+          additionalStepBeforeReturn: (_) {
             // Mock java update purchase callback.
-            final MethodCall call =
-                MethodCall(kOnPurchasesUpdated, <dynamic, dynamic>{
+            MethodCall call = MethodCall(kOnPurchasesUpdated, {
               'billingResult': buildBillingResultMap(expectedBillingResult),
-              'responseCode': const BillingResponseConverter().toJson(sentCode),
-              'purchasesList': const <dynamic>[]
+              'responseCode': BillingResponseConverter().toJson(sentCode),
+              'purchasesList': []
             });
             iapAndroidPlatform.billingClient.callHandler(call);
           });
-      final Completer<PurchaseDetails> completer = Completer<PurchaseDetails>();
+      Completer completer = Completer();
       PurchaseDetails purchaseDetails;
-      final Stream<List<PurchaseDetails>> purchaseStream =
-          iapAndroidPlatform.purchaseStream;
-      late StreamSubscription<List<PurchaseDetails>> subscription;
+      Stream purchaseStream = iapAndroidPlatform.purchaseStream;
+      late StreamSubscription subscription;
       subscription = purchaseStream.listen((_) {
         purchaseDetails = _.first;
         completer.complete(purchaseDetails);
@@ -372,7 +359,7 @@ void main() {
           productDetails: GooglePlayProductDetails.fromSkuDetails(skuDetails),
           applicationUserName: accountId);
       await iapAndroidPlatform.buyNonConsumable(purchaseParam: purchaseParam);
-      final PurchaseDetails result = await completer.future;
+      PurchaseDetails result = await completer.future;
 
       expect(result.error, isNotNull);
       expect(result.error!.source, kIAPSource);
@@ -382,30 +369,29 @@ void main() {
 
     test('buy consumable with auto consume, serializes and deserializes data',
         () async {
-      const SkuDetailsWrapper skuDetails = dummySkuDetails;
-      const String accountId = 'hashedAccountId';
+      final SkuDetailsWrapper skuDetails = dummySkuDetails;
+      final String accountId = "hashedAccountId";
       const String debugMessage = 'dummy message';
-      const BillingResponse sentCode = BillingResponse.ok;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse sentCode = BillingResponse.ok;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: sentCode, debugMessage: debugMessage);
 
       stubPlatform.addResponse(
           name: launchMethodName,
           value: buildBillingResultMap(expectedBillingResult),
-          additionalStepBeforeReturn: (dynamic _) {
+          additionalStepBeforeReturn: (_) {
             // Mock java update purchase callback.
-            final MethodCall call =
-                MethodCall(kOnPurchasesUpdated, <dynamic, dynamic>{
+            MethodCall call = MethodCall(kOnPurchasesUpdated, {
               'billingResult': buildBillingResultMap(expectedBillingResult),
-              'responseCode': const BillingResponseConverter().toJson(sentCode),
-              'purchasesList': <dynamic>[
-                <dynamic, dynamic>{
+              'responseCode': BillingResponseConverter().toJson(sentCode),
+              'purchasesList': [
+                {
                   'orderId': 'orderID1',
-                  'skus': <String>[skuDetails.sku],
+                  'sku': skuDetails.sku,
                   'isAutoRenewing': false,
-                  'packageName': 'package',
+                  'packageName': "package",
                   'purchaseTime': 1231231231,
-                  'purchaseToken': 'token',
+                  'purchaseToken': "token",
                   'signature': 'sign',
                   'originalJson': 'json',
                   'developerPayload': 'dummy payload',
@@ -416,26 +402,24 @@ void main() {
             });
             iapAndroidPlatform.billingClient.callHandler(call);
           });
-      final Completer<String> consumeCompleter = Completer<String>();
+      Completer consumeCompleter = Completer();
       // adding call back for consume purchase
-      const BillingResponse expectedCode = BillingResponse.ok;
-      const BillingResultWrapper expectedBillingResultForConsume =
+      final BillingResponse expectedCode = BillingResponse.ok;
+      final BillingResultWrapper expectedBillingResultForConsume =
           BillingResultWrapper(
               responseCode: expectedCode, debugMessage: debugMessage);
       stubPlatform.addResponse(
           name: consumeMethodName,
           value: buildBillingResultMap(expectedBillingResultForConsume),
           additionalStepBeforeReturn: (dynamic args) {
-            final String purchaseToken =
-                (args as Map<Object?, Object?>)['purchaseToken']! as String;
-            consumeCompleter.complete(purchaseToken);
+            String purchaseToken = args['purchaseToken'];
+            consumeCompleter.complete((purchaseToken));
           });
 
-      final Completer<PurchaseDetails> completer = Completer<PurchaseDetails>();
+      Completer completer = Completer();
       PurchaseDetails purchaseDetails;
-      final Stream<List<PurchaseDetails>> purchaseStream =
-          iapAndroidPlatform.purchaseStream;
-      late StreamSubscription<List<PurchaseDetails>> subscription;
+      Stream purchaseStream = iapAndroidPlatform.purchaseStream;
+      late StreamSubscription subscription;
       subscription = purchaseStream.listen((_) {
         purchaseDetails = _.first;
         completer.complete(purchaseDetails);
@@ -448,8 +432,7 @@ void main() {
           await iapAndroidPlatform.buyConsumable(purchaseParam: purchaseParam);
 
       // Verify that the result has succeeded
-      final GooglePlayPurchaseDetails result =
-          await completer.future as GooglePlayPurchaseDetails;
+      GooglePlayPurchaseDetails result = await completer.future;
       expect(launchResult, isTrue);
       expect(result.billingClientPurchase, isNotNull);
       expect(result.billingClientPurchase.purchaseToken,
@@ -461,8 +444,8 @@ void main() {
     test('buyNonConsumable propagates failures to launch the billing flow',
         () async {
       const String debugMessage = 'dummy message';
-      const BillingResponse sentCode = BillingResponse.error;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse sentCode = BillingResponse.error;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: sentCode, debugMessage: debugMessage);
       stubPlatform.addResponse(
           name: launchMethodName,
@@ -480,8 +463,8 @@ void main() {
     test('buyConsumable propagates failures to launch the billing flow',
         () async {
       const String debugMessage = 'dummy message';
-      const BillingResponse sentCode = BillingResponse.developerError;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse sentCode = BillingResponse.developerError;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: sentCode, debugMessage: debugMessage);
       stubPlatform.addResponse(
         name: launchMethodName,
@@ -498,29 +481,28 @@ void main() {
     });
 
     test('adds consumption failures to PurchaseDetails objects', () async {
-      const SkuDetailsWrapper skuDetails = dummySkuDetails;
-      const String accountId = 'hashedAccountId';
+      final SkuDetailsWrapper skuDetails = dummySkuDetails;
+      final String accountId = "hashedAccountId";
       const String debugMessage = 'dummy message';
-      const BillingResponse sentCode = BillingResponse.ok;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse sentCode = BillingResponse.ok;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: sentCode, debugMessage: debugMessage);
       stubPlatform.addResponse(
           name: launchMethodName,
           value: buildBillingResultMap(expectedBillingResult),
-          additionalStepBeforeReturn: (dynamic _) {
+          additionalStepBeforeReturn: (_) {
             // Mock java update purchase callback.
-            final MethodCall call =
-                MethodCall(kOnPurchasesUpdated, <dynamic, dynamic>{
+            MethodCall call = MethodCall(kOnPurchasesUpdated, {
               'billingResult': buildBillingResultMap(expectedBillingResult),
-              'responseCode': const BillingResponseConverter().toJson(sentCode),
-              'purchasesList': <dynamic>[
-                <dynamic, dynamic>{
+              'responseCode': BillingResponseConverter().toJson(sentCode),
+              'purchasesList': [
+                {
                   'orderId': 'orderID1',
-                  'skus': <String>[skuDetails.sku],
+                  'sku': skuDetails.sku,
                   'isAutoRenewing': false,
-                  'packageName': 'package',
+                  'packageName': "package",
                   'purchaseTime': 1231231231,
-                  'purchaseToken': 'token',
+                  'purchaseToken': "token",
                   'signature': 'sign',
                   'originalJson': 'json',
                   'developerPayload': 'dummy payload',
@@ -531,26 +513,24 @@ void main() {
             });
             iapAndroidPlatform.billingClient.callHandler(call);
           });
-      final Completer<String> consumeCompleter = Completer<String>();
+      Completer consumeCompleter = Completer();
       // adding call back for consume purchase
-      const BillingResponse expectedCode = BillingResponse.error;
-      const BillingResultWrapper expectedBillingResultForConsume =
+      final BillingResponse expectedCode = BillingResponse.error;
+      final BillingResultWrapper expectedBillingResultForConsume =
           BillingResultWrapper(
               responseCode: expectedCode, debugMessage: debugMessage);
       stubPlatform.addResponse(
           name: consumeMethodName,
           value: buildBillingResultMap(expectedBillingResultForConsume),
           additionalStepBeforeReturn: (dynamic args) {
-            final String purchaseToken =
-                (args as Map<Object?, Object?>)['purchaseToken']! as String;
+            String purchaseToken = args['purchaseToken'];
             consumeCompleter.complete(purchaseToken);
           });
 
-      final Completer<PurchaseDetails> completer = Completer<PurchaseDetails>();
+      Completer completer = Completer();
       PurchaseDetails purchaseDetails;
-      final Stream<List<PurchaseDetails>> purchaseStream =
-          iapAndroidPlatform.purchaseStream;
-      late StreamSubscription<List<PurchaseDetails>> subscription;
+      Stream purchaseStream = iapAndroidPlatform.purchaseStream;
+      late StreamSubscription subscription;
       subscription = purchaseStream.listen((_) {
         purchaseDetails = _.first;
         completer.complete(purchaseDetails);
@@ -562,8 +542,7 @@ void main() {
       await iapAndroidPlatform.buyConsumable(purchaseParam: purchaseParam);
 
       // Verify that the result has an error for the failed consumption
-      final GooglePlayPurchaseDetails result =
-          await completer.future as GooglePlayPurchaseDetails;
+      GooglePlayPurchaseDetails result = await completer.future;
       expect(result.billingClientPurchase, isNotNull);
       expect(result.billingClientPurchase.purchaseToken,
           await consumeCompleter.future);
@@ -575,30 +554,29 @@ void main() {
     test(
         'buy consumable without auto consume, consume api should not receive calls',
         () async {
-      const SkuDetailsWrapper skuDetails = dummySkuDetails;
-      const String accountId = 'hashedAccountId';
+      final SkuDetailsWrapper skuDetails = dummySkuDetails;
+      final String accountId = "hashedAccountId";
       const String debugMessage = 'dummy message';
-      const BillingResponse sentCode = BillingResponse.developerError;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse sentCode = BillingResponse.developerError;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: sentCode, debugMessage: debugMessage);
 
       stubPlatform.addResponse(
           name: launchMethodName,
           value: buildBillingResultMap(expectedBillingResult),
-          additionalStepBeforeReturn: (dynamic _) {
+          additionalStepBeforeReturn: (_) {
             // Mock java update purchase callback.
-            final MethodCall call =
-                MethodCall(kOnPurchasesUpdated, <dynamic, dynamic>{
+            MethodCall call = MethodCall(kOnPurchasesUpdated, {
               'billingResult': buildBillingResultMap(expectedBillingResult),
-              'responseCode': const BillingResponseConverter().toJson(sentCode),
-              'purchasesList': <dynamic>[
-                <dynamic, dynamic>{
+              'responseCode': BillingResponseConverter().toJson(sentCode),
+              'purchasesList': [
+                {
                   'orderId': 'orderID1',
-                  'skus': <String>[skuDetails.sku],
+                  'sku': skuDetails.sku,
                   'isAutoRenewing': false,
-                  'packageName': 'package',
+                  'packageName': "package",
                   'purchaseTime': 1231231231,
-                  'purchaseToken': 'token',
+                  'purchaseToken': "token",
                   'signature': 'sign',
                   'originalJson': 'json',
                   'developerPayload': 'dummy payload',
@@ -609,24 +587,22 @@ void main() {
             });
             iapAndroidPlatform.billingClient.callHandler(call);
           });
-      final Completer<String?> consumeCompleter = Completer<String?>();
+      Completer consumeCompleter = Completer();
       // adding call back for consume purchase
-      const BillingResponse expectedCode = BillingResponse.ok;
-      const BillingResultWrapper expectedBillingResultForConsume =
+      final BillingResponse expectedCode = BillingResponse.ok;
+      final BillingResultWrapper expectedBillingResultForConsume =
           BillingResultWrapper(
               responseCode: expectedCode, debugMessage: debugMessage);
       stubPlatform.addResponse(
           name: consumeMethodName,
           value: buildBillingResultMap(expectedBillingResultForConsume),
           additionalStepBeforeReturn: (dynamic args) {
-            final String purchaseToken =
-                (args as Map<Object?, Object?>)['purchaseToken']! as String;
-            consumeCompleter.complete(purchaseToken);
+            String purchaseToken = args['purchaseToken'];
+            consumeCompleter.complete((purchaseToken));
           });
 
-      final Stream<List<PurchaseDetails>> purchaseStream =
-          iapAndroidPlatform.purchaseStream;
-      late StreamSubscription<List<PurchaseDetails>> subscription;
+      Stream purchaseStream = iapAndroidPlatform.purchaseStream;
+      late StreamSubscription subscription;
       subscription = purchaseStream.listen((_) {
         consumeCompleter.complete(null);
         subscription.cancel();
@@ -642,29 +618,28 @@ void main() {
     test(
         'should get canceled purchase status when response code is BillingResponse.userCanceled',
         () async {
-      const SkuDetailsWrapper skuDetails = dummySkuDetails;
-      const String accountId = 'hashedAccountId';
+      final SkuDetailsWrapper skuDetails = dummySkuDetails;
+      final String accountId = "hashedAccountId";
       const String debugMessage = 'dummy message';
-      const BillingResponse sentCode = BillingResponse.userCanceled;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse sentCode = BillingResponse.userCanceled;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: sentCode, debugMessage: debugMessage);
       stubPlatform.addResponse(
           name: launchMethodName,
           value: buildBillingResultMap(expectedBillingResult),
-          additionalStepBeforeReturn: (dynamic _) {
+          additionalStepBeforeReturn: (_) {
             // Mock java update purchase callback.
-            final MethodCall call =
-                MethodCall(kOnPurchasesUpdated, <dynamic, dynamic>{
+            MethodCall call = MethodCall(kOnPurchasesUpdated, {
               'billingResult': buildBillingResultMap(expectedBillingResult),
-              'responseCode': const BillingResponseConverter().toJson(sentCode),
-              'purchasesList': <dynamic>[
-                <dynamic, dynamic>{
+              'responseCode': BillingResponseConverter().toJson(sentCode),
+              'purchasesList': [
+                {
                   'orderId': 'orderID1',
                   'sku': skuDetails.sku,
                   'isAutoRenewing': false,
-                  'packageName': 'package',
+                  'packageName': "package",
                   'purchaseTime': 1231231231,
-                  'purchaseToken': 'token',
+                  'purchaseToken': "token",
                   'signature': 'sign',
                   'originalJson': 'json',
                   'developerPayload': 'dummy payload',
@@ -675,26 +650,24 @@ void main() {
             });
             iapAndroidPlatform.billingClient.callHandler(call);
           });
-      final Completer<String> consumeCompleter = Completer<String>();
+      Completer consumeCompleter = Completer();
       // adding call back for consume purchase
-      const BillingResponse expectedCode = BillingResponse.userCanceled;
-      const BillingResultWrapper expectedBillingResultForConsume =
+      final BillingResponse expectedCode = BillingResponse.userCanceled;
+      final BillingResultWrapper expectedBillingResultForConsume =
           BillingResultWrapper(
               responseCode: expectedCode, debugMessage: debugMessage);
       stubPlatform.addResponse(
           name: consumeMethodName,
           value: buildBillingResultMap(expectedBillingResultForConsume),
           additionalStepBeforeReturn: (dynamic args) {
-            final String purchaseToken =
-                (args as Map<Object?, Object?>)['purchaseToken']! as String;
+            String purchaseToken = args['purchaseToken'];
             consumeCompleter.complete(purchaseToken);
           });
 
-      final Completer<PurchaseDetails> completer = Completer<PurchaseDetails>();
+      Completer completer = Completer();
       PurchaseDetails purchaseDetails;
-      final Stream<List<PurchaseDetails>> purchaseStream =
-          iapAndroidPlatform.purchaseStream;
-      late StreamSubscription<List<PurchaseDetails>> subscription;
+      Stream purchaseStream = iapAndroidPlatform.purchaseStream;
+      late StreamSubscription subscription;
       subscription = purchaseStream.listen((_) {
         purchaseDetails = _.first;
         completer.complete(purchaseDetails);
@@ -706,39 +679,36 @@ void main() {
       await iapAndroidPlatform.buyConsumable(purchaseParam: purchaseParam);
 
       // Verify that the result has an error for the failed consumption
-      final GooglePlayPurchaseDetails result =
-          await completer.future as GooglePlayPurchaseDetails;
+      GooglePlayPurchaseDetails result = await completer.future;
       expect(result.status, PurchaseStatus.canceled);
     });
 
     test(
         'should get purchased purchase status when upgrading subscription by deferred proration mode',
         () async {
-      const SkuDetailsWrapper skuDetails = dummySkuDetails;
-      const String accountId = 'hashedAccountId';
+      final SkuDetailsWrapper skuDetails = dummySkuDetails;
+      final String accountId = "hashedAccountId";
       const String debugMessage = 'dummy message';
-      const BillingResponse sentCode = BillingResponse.ok;
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResponse sentCode = BillingResponse.ok;
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: sentCode, debugMessage: debugMessage);
       stubPlatform.addResponse(
           name: launchMethodName,
           value: buildBillingResultMap(expectedBillingResult),
-          additionalStepBeforeReturn: (dynamic _) {
+          additionalStepBeforeReturn: (_) {
             // Mock java update purchase callback.
-            final MethodCall call =
-                MethodCall(kOnPurchasesUpdated, <dynamic, dynamic>{
+            MethodCall call = MethodCall(kOnPurchasesUpdated, {
               'billingResult': buildBillingResultMap(expectedBillingResult),
-              'responseCode': const BillingResponseConverter().toJson(sentCode),
-              'purchasesList': const <dynamic>[]
+              'responseCode': BillingResponseConverter().toJson(sentCode),
+              'purchasesList': []
             });
             iapAndroidPlatform.billingClient.callHandler(call);
           });
 
-      final Completer<PurchaseDetails> completer = Completer<PurchaseDetails>();
+      Completer completer = Completer();
       PurchaseDetails purchaseDetails;
-      final Stream<List<PurchaseDetails>> purchaseStream =
-          iapAndroidPlatform.purchaseStream;
-      late StreamSubscription<List<PurchaseDetails>> subscription;
+      Stream purchaseStream = iapAndroidPlatform.purchaseStream;
+      late StreamSubscription subscription;
       subscription = purchaseStream.listen((_) {
         purchaseDetails = _.first;
         completer.complete(purchaseDetails);
@@ -754,7 +724,7 @@ void main() {
           ));
       await iapAndroidPlatform.buyNonConsumable(purchaseParam: purchaseParam);
 
-      final PurchaseDetails result = await completer.future;
+      PurchaseDetails result = await completer.future;
       expect(result.status, PurchaseStatus.purchased);
     });
   });
@@ -763,18 +733,17 @@ void main() {
     const String completeMethodName =
         'BillingClient#(AcknowledgePurchaseParams params, (AcknowledgePurchaseParams, AcknowledgePurchaseResponseListener)';
     test('complete purchase success', () async {
-      const BillingResponse expectedCode = BillingResponse.ok;
+      final BillingResponse expectedCode = BillingResponse.ok;
       const String debugMessage = 'dummy message';
-      const BillingResultWrapper expectedBillingResult = BillingResultWrapper(
+      final BillingResultWrapper expectedBillingResult = BillingResultWrapper(
           responseCode: expectedCode, debugMessage: debugMessage);
       stubPlatform.addResponse(
         name: completeMethodName,
         value: buildBillingResultMap(expectedBillingResult),
       );
-      final PurchaseDetails purchaseDetails =
+      PurchaseDetails purchaseDetails =
           GooglePlayPurchaseDetails.fromPurchase(dummyUnacknowledgedPurchase);
-      final Completer<BillingResultWrapper> completer =
-          Completer<BillingResultWrapper>();
+      Completer completer = Completer();
       purchaseDetails.status = PurchaseStatus.purchased;
       if (purchaseDetails.pendingCompletePurchase) {
         final BillingResultWrapper billingResultWrapper =

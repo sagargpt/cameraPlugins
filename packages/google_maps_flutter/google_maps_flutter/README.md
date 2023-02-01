@@ -1,14 +1,8 @@
 # Google Maps for Flutter
 
-<?code-excerpt path-base="excerpts/packages/google_maps_flutter_example"?>
-
 [![pub package](https://img.shields.io/pub/v/google_maps_flutter.svg)](https://pub.dev/packages/google_maps_flutter)
 
 A Flutter plugin that provides a [Google Maps](https://developers.google.com/maps/) widget.
-
-|             | Android | iOS    |
-|-------------|---------|--------|
-| **Support** | SDK 20+ | iOS 9+ |
 
 ## Usage
 
@@ -52,15 +46,21 @@ This means that app will only be available for users that run Android SDK 20 or 
                android:value="YOUR KEY HERE"/>
 ```
 
-#### Display Mode
+#### Hybrid Composition
 
-The Android implementation supports multiple
-[platform view display modes](https://flutter.dev/docs/development/platform-integration/platform-views).
-For details, see [the Android README](https://pub.dev/packages/google_maps_flutter_android#display-mode).
+To use [Hybrid Composition](https://flutter.dev/docs/development/platform-integration/platform-views)
+to render the `GoogleMap` widget on Android, set `AndroidGoogleMapsFlutter.useAndroidViewSurface` to
+true.
+
+```dart
+if (defaultTargetPlatform == TargetPlatform.android) {
+  AndroidGoogleMapsFlutter.useAndroidViewSurface = true;
+}
+```
 
 ### iOS
 
-To set up, specify your API key in the application delegate `ios/Runner/AppDelegate.m`:
+This plugin requires iOS 9.0 or higher. To set up, specify your API key in the application delegate `ios/Runner/AppDelegate.m`:
 
 ```objectivec
 #include "AppDelegate.h"
@@ -107,25 +107,38 @@ the `GoogleMap`'s `onMapCreated` callback.
 
 ### Sample Usage
 
-<?code-excerpt "readme_sample.dart (MapSample)"?>
 ```dart
-class MapSample extends StatefulWidget {
-  const MapSample({Key? key}) : super(key: key);
+import 'dart:async';
 
+import 'package:flutter/material.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
+
+void main() => runApp(MyApp());
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Google Maps Demo',
+      home: MapSample(),
+    );
+  }
+}
+
+class MapSample extends StatefulWidget {
   @override
   State<MapSample> createState() => MapSampleState();
 }
 
 class MapSampleState extends State<MapSample> {
-  final Completer<GoogleMapController> _controller =
-      Completer<GoogleMapController>();
+  Completer<GoogleMapController> _controller = Completer();
 
-  static const CameraPosition _kGooglePlex = CameraPosition(
+  static final CameraPosition _kGooglePlex = CameraPosition(
     target: LatLng(37.42796133580664, -122.085749655962),
     zoom: 14.4746,
   );
 
-  static const CameraPosition _kLake = CameraPosition(
+  static final CameraPosition _kLake = CameraPosition(
       bearing: 192.8334901395799,
       target: LatLng(37.43296265331129, -122.08832357078792),
       tilt: 59.440717697143555,
@@ -133,7 +146,7 @@ class MapSampleState extends State<MapSample> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return new Scaffold(
       body: GoogleMap(
         mapType: MapType.hybrid,
         initialCameraPosition: _kGooglePlex,
@@ -143,8 +156,8 @@ class MapSampleState extends State<MapSample> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: _goToTheLake,
-        label: const Text('To the lake!'),
-        icon: const Icon(Icons.directions_boat),
+        label: Text('To the lake!'),
+        icon: Icon(Icons.directions_boat),
       ),
     );
   }
